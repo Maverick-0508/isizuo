@@ -1,18 +1,25 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { useAuthStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
 
 export default function RootLayout() {
-  const { setUser, setSession, isLoading } = useAuthStore();
+  const { setUser, setSession } = useAuthStore();
+  const [ready, setReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const timeout = setTimeout(() => setReady(true), 2000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user as any);
+    }).catch(() => {}).finally(() => {
+      clearTimeout(timeout);
+      setReady(true);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -20,13 +27,17 @@ export default function RootLayout() {
       setUser(session?.user as any);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
-  if (isLoading) {
+  if (!ready) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator size="large" color={COLORS.primary} />
+        <Text style={styles.loadingText}>Loading Isizuo...</Text>
       </View>
     );
   }
@@ -60,5 +71,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: COLORS.background,
+  },
+  loadingText: {
+    color: COLORS.primary,
+    marginTop: 12,
+    fontSize: 16,
   },
 });
