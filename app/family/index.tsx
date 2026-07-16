@@ -11,7 +11,9 @@ import {
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 import { useTranslation } from '@/hooks';
+import { useAuthStore } from '@/stores';
 import { Card, Badge, Button, Avatar } from '@/components/ui';
+import { sendFamilyEndorsementRequest } from '@/services/sms';
 
 interface Endorsement {
   id: string;
@@ -24,10 +26,12 @@ interface Endorsement {
 
 export default function FamilyScreen() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [showRequestForm, setShowRequestForm] = useState(false);
   const [endorserName, setEndorserName] = useState('');
   const [relationship, setRelationship] = useState('');
   const [message, setMessage] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [endorsements, setEndorsements] = useState<Endorsement[]>([
     {
       id: '1',
@@ -52,7 +56,7 @@ export default function FamilyScreen() {
     'Friend', 'Colleague', 'Religious Leader', 'Other',
   ];
 
-  const handleRequestEndorsement = () => {
+  const handleRequestEndorsement = async () => {
     if (!endorserName || !relationship) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
@@ -72,6 +76,11 @@ export default function FamilyScreen() {
     setEndorserName('');
     setRelationship('');
     setMessage('');
+
+    if (contactPhone) {
+      await sendFamilyEndorsementRequest(contactPhone, endorserName, user?.name || 'Isizuo user');
+    }
+
     Alert.alert('Success', 'Endorsement request sent!');
   };
 
@@ -132,6 +141,16 @@ export default function FamilyScreen() {
         {showRequestForm && (
           <Card style={styles.formCard}>
             <Text style={styles.formTitle}>Request Endorsement</Text>
+
+            <Text style={styles.label}>Endorser Phone *</Text>
+            <TextInput
+              style={styles.textInput}
+              value={contactPhone}
+              onChangeText={setContactPhone}
+              placeholder="+254 7XX XXX XXX"
+              placeholderTextColor={COLORS.textLight}
+              keyboardType="phone-pad"
+            />
 
             <Text style={styles.label}>Endorser Name *</Text>
             <TextInput

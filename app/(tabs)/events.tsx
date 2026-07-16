@@ -9,12 +9,14 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
-import { useEventStore } from '@/stores';
+import { useEventStore, useAuthStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Card, Badge, Button, EmptyState } from '@/components/ui';
+import { sendEventReminder } from '@/services/sms';
 
 export default function EventsScreen() {
   const { events, userEvents, fetchEvents, rsvpEvent } = useEventStore();
+  const { user } = useAuthStore();
   const { t } = useTranslation();
   const [selectedTab, setSelectedTab] = useState<'discover' | 'my'>('discover');
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -129,7 +131,12 @@ export default function EventsScreen() {
                 </View>
                 <Button
                   title={userEvents.includes(event.id) ? 'Going ✓' : t('rsvp')}
-                  onPress={() => rsvpEvent(event.id)}
+                  onPress={() => {
+                    rsvpEvent(event.id);
+                    if (user?.phone && !userEvents.includes(event.id)) {
+                      sendEventReminder(user.phone, event.title, `${event.date} ${event.time}`);
+                    }
+                  }}
                   variant={userEvents.includes(event.id) ? 'success' : 'primary'}
                   size="sm"
                 />

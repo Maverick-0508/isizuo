@@ -11,10 +11,11 @@ import {
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
-import { useChatStore, useAuthStore } from '@/stores';
+import { useChatStore, useAuthStore, useMatchingStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Avatar, Button } from '@/components/ui';
 import { Message } from '@/types';
+import { sendMatchNotification } from '@/services/sms';
 
 const AI_ICEBREAKERS = [
   "What's your favorite local food spot?",
@@ -46,7 +47,14 @@ export default function ChatScreen() {
 
   const handleSend = () => {
     if (!message.trim()) return;
+    const isFirstMessage = messages.length === 0;
     sendMessage(matchId || '', message.trim());
+    if (isFirstMessage && user?.phone) {
+      const matchedUser = useMatchingStore.getState().matches.find((m) => m.id === matchId);
+      if (matchedUser) {
+        sendMatchNotification(user.phone, matchedUser.matchedUserId);
+      }
+    }
     setMessage('');
   };
 

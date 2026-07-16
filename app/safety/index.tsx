@@ -13,6 +13,7 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, REPORT_REASONS, SAFETY_CHEC
 import { useSafetyStore, useAuthStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Card, Badge, Button, Avatar } from '@/components/ui';
+import { sendSafetyAlert, sendCheckInReminder } from '@/services/sms';
 
 export default function SafetyScreen() {
   const { activeCheckIn, startCheckIn, endCheckIn, triggerEmergency, reportUser, trustedContacts, addTrustedContact } = useSafetyStore();
@@ -25,8 +26,14 @@ export default function SafetyScreen() {
   const [contactPhone, setContactPhone] = useState('');
   const [selectedInterval, setSelectedInterval] = useState(30);
 
-  const handleStartCheckIn = () => {
-    startCheckIn('current-match');
+  const handleStartCheckIn = async () => {
+    await startCheckIn('current-match');
+    if (user?.phone) {
+      sendCheckInReminder(user.phone, selectedInterval);
+    }
+    trustedContacts.forEach((contact) => {
+      sendCheckInReminder(contact, selectedInterval);
+    });
     Alert.alert('Safety Check-In Started', `We'll remind you every ${selectedInterval} minutes to check in.`);
   };
 
@@ -36,7 +43,17 @@ export default function SafetyScreen() {
       'This will share your location with your emergency contacts and alert them. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Trigger SOS', style: 'destructive', onPress: triggerEmergency },
+        {
+          text: 'Trigger SOS',
+          style: 'destructive',
+          onPress: async () => {
+            await triggerEmergency();
+            const location = user?.location || { latitude: 0, longitude: 0 };
+            trustedContacts.forEach((contact) => {
+              sendSafetyAlert(contact, location);
+            });
+          },
+        },
       ]
     );
   };

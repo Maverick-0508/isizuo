@@ -1,15 +1,34 @@
 import React, { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { useAuthStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
 
+function AuthGuard({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuthStore();
+  const segments = useSegments();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (isLoading) return;
+
+    const inAuthGroup = segments[0] === '(auth)';
+
+    if (!isAuthenticated && !inAuthGroup) {
+      router.replace('/(auth)');
+    } else if (isAuthenticated && inAuthGroup) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated, isLoading, segments]);
+
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   const { setUser, setSession } = useAuthStore();
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const timeout = setTimeout(() => setReady(true), 2000);
@@ -43,7 +62,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <AuthGuard>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -61,7 +80,7 @@ export default function RootLayout() {
         <Stack.Screen name="chat" />
         <Stack.Screen name="family" />
       </Stack>
-    </>
+    </AuthGuard>
   );
 }
 

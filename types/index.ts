@@ -102,7 +102,8 @@ export interface SafetyCheckIn {
 }
 
 export interface Report {
-  id: string: reporterId: string;
+  id: string;
+  reporterId: string;
   reportedUserId: string;
   reason: 'harassment' | 'scam' | 'fake_profile' | 'explicit_content' | 'inappropriate_behavior' | 'other';
   description: string;

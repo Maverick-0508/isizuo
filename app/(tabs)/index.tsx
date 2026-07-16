@@ -13,6 +13,7 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants
 import { useMatchingStore, useAuthStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Card, Badge, Button, Avatar, EmptyState } from '@/components/ui';
+import { sendMatchNotification } from '@/services/sms';
 
 const { width } = Dimensions.get('window');
 
@@ -34,16 +35,24 @@ export default function MatchesScreen() {
 
   const currentProfile = potentialMatches[currentMatchIndex];
 
-  const handleLike = () => {
-    if (currentProfile) likeUser(currentProfile.id);
+  const handleLike = async () => {
+    if (!currentProfile) return;
+    await likeUser(currentProfile.id);
+    if (currentProfile.phone) {
+      sendMatchNotification(currentProfile.phone, user?.name || 'Someone');
+    }
   };
 
   const handlePass = () => {
     if (currentProfile) passUser(currentProfile.id);
   };
 
-  const handleSuperLike = () => {
-    if (currentProfile) superLikeUser(currentProfile.id);
+  const handleSuperLike = async () => {
+    if (!currentProfile) return;
+    await superLikeUser(currentProfile.id);
+    if (currentProfile.phone) {
+      sendMatchNotification(currentProfile.phone, user?.name || 'Someone');
+    }
   };
 
   if (!currentProfile) {

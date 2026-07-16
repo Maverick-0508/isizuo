@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { User, Match, Message, Event, Community, SafetyCheckIn, Report, Language } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { sendOTP, verifyOTP } from '@/services/sms';
 
 interface AuthState {
   user: User | null;
@@ -26,8 +27,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (phone: string) => {
     try {
-      const { error } = await supabase.auth.signInWithOtp({ phone });
-      if (error) throw error;
+      const success = await sendOTP(phone);
+      if (!success) throw new Error('Failed to send OTP');
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -43,7 +44,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
       if (error) throw error;
       if (data.session) {
-        set({ session: data.session });
+        set({
+          session: data.session,
+          user: data.session.user as unknown as User,
+          isAuthenticated: true,
+        });
         return true;
       }
       return false;

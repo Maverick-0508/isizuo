@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 import { useTranslation } from '@/hooks';
+import { useAuthStore } from '@/stores';
+import { handleUSSDRequest } from '@/services/sms';
 
 interface USSDMenuItem {
   id: string;
@@ -20,9 +22,11 @@ interface USSDMenuItem {
 
 export default function USSDScreen() {
   const { t } = useTranslation();
+  const { user } = useAuthStore();
   const [currentScreen, setCurrentScreen] = useState<'menu' | 'matches' | 'profile' | 'safety' | 'events' | 'credits'>('menu');
   const [inputValue, setInputValue] = useState('');
   const [history, setHistory] = useState<string[]>([]);
+  const [ussdOutput, setUssdOutput] = useState('');
 
   const menuItems: USSDMenuItem[] = [
     { id: '1', label: 'View Matches', action: () => navigateTo('matches') },
@@ -93,7 +97,7 @@ export default function USSDScreen() {
 
   const goBack = () => {
     const newHistory = [...history];
-    const prev = newHistory.pop() || 'menu';
+    const prev = (newHistory.pop() || 'menu') as typeof currentScreen;
     setHistory(newHistory);
     setCurrentScreen(prev);
     setInputValue('');
@@ -105,11 +109,19 @@ export default function USSDScreen() {
     }
   };
 
-  const handleInput = () => {
+  const handleInput = async () => {
+    if (!inputValue) return;
+
     const items = getItems();
     const selected = items.find((item) => item.id === inputValue);
     if (selected) {
       handleSelect(selected);
+      return;
+    }
+
+    if (user?.phone) {
+      const response = await handleUSSDRequest(user.phone, Date.now().toString(), inputValue);
+      setUssdOutput(response);
     }
   };
 

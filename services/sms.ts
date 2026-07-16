@@ -1,13 +1,10 @@
 import { supabase } from '@/lib/supabase';
 
-const AFRICASTALKING_API_KEY = process.env.EXPO_PUBLIC_AFRICASTALKING_API_KEY || '';
-const AFRICASTALKING_USERNAME = process.env.EXPO_PUBLIC_AFRICASTALKING_USERNAME || '';
-
 export async function sendSMS(phone: string, message: string): Promise<boolean> {
   try {
     console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
 
-    const { error } = await supabase.functions.invoke('send-sms', {
+    const { error } = await supabase.functions.invoke('quick-worker', {
       body: { phone, message },
     });
 
