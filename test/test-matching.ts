@@ -149,7 +149,7 @@ const TEST_USERS: User[] = [
     gender: 'female',
     bio: 'Medical student, passionate about healthcare and community service.',
     photos: ['photo3.jpg'],
-    languages: ['en', 'ha', 'ar'],
+    languages: ['en', 'ha'],
     community: 'Hausa',
     religion: 'Muslim',
     values: ['Spiritual', 'Educated', 'Compassionate', 'Family-oriented'],
@@ -215,7 +215,7 @@ const TEST_USERS: User[] = [
     gender: 'male',
     bio: 'Lawyer by day, musician by night. I play the guitar and speak 3 languages.',
     photos: ['photo6.jpg'],
-    languages: ['en', 'yo', 'ig'],
+    languages: ['en', 'yo'],
     community: 'Yoruba',
     religion: 'Christian',
     values: ['Intellectual', 'Creative', 'Family-oriented', 'Respectful'],
@@ -1063,7 +1063,7 @@ function runTests() {
 
   // Verify best matches make cultural sense
   const aminaTop = allMatchResults.find((r) => r.user === 'Amina Okafor');
-  assert(aminaTop?.score >= 50, `Amina's top match has strong compatibility (got ${aminaTop?.score}%)`);
+  assert(aminaTop!.score >= 50, `Amina's top match has strong compatibility (got ${aminaTop?.score}%)`);
 
   // ── Summary ──
   sectionHeader('TEST RESULTS SUMMARY');
