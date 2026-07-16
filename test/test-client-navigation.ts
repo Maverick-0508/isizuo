@@ -372,6 +372,7 @@ function moderateContent(content: string): { flagged: boolean; reason?: string }
   const scamPatterns = [
     /send\s*(me\s*)?money/i, /bank\s*account/i, /western\s*union/i,
     /visa\s*fee/i, /processing\s*fee/i, /invest\s*\d+/i, /guaranteed\s*return/i,
+    /credit\s*card/i,
   ];
   const harassmentPatterns = [
     /kill\s*yourself/i, /you're\s*(ugly|stupid|worthless)/i,

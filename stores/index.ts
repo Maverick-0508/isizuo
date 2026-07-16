@@ -313,6 +313,7 @@ function moderateContent(content: string): { flagged: boolean; reason?: string }
     /processing\s*fee/i,
     /invest\s*\d+/i,
     /guaranteed\s*return/i,
+    /credit\s*card/i,
   ];
 
   const harassmentPatterns = [
