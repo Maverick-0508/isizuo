@@ -16,7 +16,7 @@ import { useTranslation } from '@/hooks';
 import { Button } from '@/components/ui';
 
 export default function VerifyScreen() {
-  const { phone } = useLocalSearchParams<{ phone: string }>();
+  const { email } = useLocalSearchParams<{ email: string }>();
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const { verifyOtp } = useAuthStore();
@@ -48,7 +48,7 @@ export default function VerifyScreen() {
 
     setIsLoading(true);
     try {
-      const success = await verifyOtp(phone || '', otpString);
+      const success = await verifyOtp(email || '', otpString);
       if (success) {
         router.replace('/(tabs)');
       } else {
@@ -64,7 +64,7 @@ export default function VerifyScreen() {
   const handleResend = async () => {
     try {
       const { signIn } = useAuthStore.getState();
-      await signIn(phone || '');
+      await signIn(email || '');
       Alert.alert('Success', t('otp_sent'));
     } catch (error) {
       Alert.alert('Error', 'Failed to resend code');
@@ -83,8 +83,8 @@ export default function VerifyScreen() {
 
         <View style={styles.header}>
           <Text style={styles.title}>{t('verify_otp')}</Text>
-          <Text style={styles.subtitle}>{t('enter_otp')}</Text>
-          <Text style={styles.phone}>{phone}</Text>
+          <Text style={styles.subtitle}>We sent a 6-digit code to</Text>
+          <Text style={styles.email}>{email}</Text>
         </View>
 
         <View style={styles.otpContainer}>
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     color: COLORS.textLight,
     marginBottom: SPACING.sm,
   },
-  phone: {
+  email: {
     fontSize: FONT_SIZES.lg,
     color: COLORS.primary,
     fontWeight: '600',

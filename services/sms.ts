@@ -16,9 +16,9 @@ export async function sendSMS(phone: string, message: string): Promise<boolean> 
   }
 }
 
-export async function sendOTP(phone: string): Promise<boolean> {
+export async function sendOTP(email: string): Promise<boolean> {
   try {
-    const { error } = await supabase.auth.signInWithOtp({ phone });
+    const { error } = await supabase.auth.signInWithOtp({ email });
     if (error) throw error;
     return true;
   } catch (error) {
@@ -27,12 +27,12 @@ export async function sendOTP(phone: string): Promise<boolean> {
   }
 }
 
-export async function verifyOTP(phone: string, token: string): Promise<boolean> {
+export async function verifyOTP(email: string, token: string): Promise<boolean> {
   try {
     const { data, error } = await supabase.auth.verifyOtp({
-      phone,
+      email,
       token,
-      type: 'sms',
+      type: 'email',
     });
     if (error) throw error;
     return !!data.session;

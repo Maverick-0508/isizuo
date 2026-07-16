@@ -10,8 +10,8 @@ interface AuthState {
   isAuthenticated: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: any) => void;
-  signIn: (phone: string) => Promise<void>;
-  verifyOtp: (phone: string, token: string) => Promise<boolean>;
+  signIn: (email: string) => Promise<void>;
+  verifyOtp: (email: string, token: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
 }
@@ -25,9 +25,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (user) => set({ user, isAuthenticated: !!user }),
   setSession: (session) => set({ session }),
 
-  signIn: async (phone: string) => {
+  signIn: async (email: string) => {
     try {
-      const success = await sendOTP(phone);
+      const success = await sendOTP(email);
       if (!success) throw new Error('Failed to send OTP');
     } catch (error) {
       console.error('Sign in error:', error);
@@ -35,12 +35,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  verifyOtp: async (phone: string, token: string) => {
+  verifyOtp: async (email: string, token: string) => {
     try {
       const { data, error } = await supabase.auth.verifyOtp({
-        phone,
+        email,
         token,
-        type: 'sms',
+        type: 'email',
       });
       if (error) throw error;
       if (data.session) {

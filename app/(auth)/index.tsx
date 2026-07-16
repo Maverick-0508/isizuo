@@ -16,20 +16,21 @@ import { useTranslation } from '@/hooks';
 import { Button } from '@/components/ui';
 
 export default function LoginScreen() {
-  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { signIn } = useAuthStore();
   const { t } = useTranslation();
 
   const handleSendOtp = async () => {
-    if (!phone || phone.length < 10) {
-      Alert.alert('Error', 'Please enter a valid phone number');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
     setIsLoading(true);
     try {
-      await signIn(phone);
-      router.push({ pathname: '/(auth)/verify', params: { phone } });
+      await signIn(email);
+      router.push({ pathname: '/(auth)/verify', params: { email } });
     } catch (error) {
       Alert.alert('Error', 'Failed to send verification code. Please try again.');
     } finally {
@@ -50,25 +51,23 @@ export default function LoginScreen() {
         </View>
 
         <View style={styles.form}>
-          <Text style={styles.label}>{t('phone_placeholder')}</Text>
-          <View style={styles.phoneInput}>
-            <Text style={styles.countryCode}>+254</Text>
-            <TextInput
-              style={styles.input}
-              value={phone}
-              onChangeText={setPhone}
-              placeholder="7XX XXX XXX"
-              placeholderTextColor={COLORS.textLight}
-              keyboardType="phone-pad"
-              maxLength={12}
-            />
-          </View>
+          <Text style={styles.label}>Email Address</Text>
+          <TextInput
+            style={styles.emailInput}
+            value={email}
+            onChangeText={setEmail}
+            placeholder="you@example.com"
+            placeholderTextColor={COLORS.textLight}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
 
           <Button
             title={t('send_otp')}
             onPress={handleSendOtp}
             isLoading={isLoading}
-            disabled={!phone || phone.length < 10}
+            disabled={!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
           />
         </View>
 
@@ -130,27 +129,11 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.sm,
     fontWeight: '500',
   },
-  phoneInput: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  emailInput: {
     borderWidth: 1,
     borderColor: COLORS.border,
     borderRadius: BORDER_RADIUS.md,
     marginBottom: SPACING.lg,
-    overflow: 'hidden',
-  },
-  countryCode: {
-    backgroundColor: COLORS.surfaceDark,
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    fontWeight: '600',
-    borderRightWidth: 1,
-    borderRightColor: COLORS.border,
-  },
-  input: {
-    flex: 1,
     paddingHorizontal: SPACING.md,
     paddingVertical: SPACING.md,
     fontSize: FONT_SIZES.lg,
