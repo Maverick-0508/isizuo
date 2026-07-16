@@ -306,7 +306,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
 function moderateContent(content: string): { flagged: boolean; reason?: string } {
   const scamPatterns = [
-    /send\s*money/i,
+    /send\s*(me\s*)?money/i,
     /bank\s*account/i,
     /western\s*union/i,
     /visa\s*fee/i,
