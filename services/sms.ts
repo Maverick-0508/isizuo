@@ -1,5 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
+const EDGE_FUNCTION_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
+
 export async function sendSMS(phone: string, message: string): Promise<boolean> {
   try {
     console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
@@ -18,8 +20,16 @@ export async function sendSMS(phone: string, message: string): Promise<boolean> 
 
 export async function sendOTP(email: string): Promise<boolean> {
   try {
-    const { error } = await supabase.auth.signInWithOtp({ email });
-    if (error) throw error;
+    const res = await fetch(`${EDGE_FUNCTION_BASE}/send-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ email }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
     return true;
   } catch (error) {
     console.error('[OTP] Send error:', error);
@@ -27,18 +37,25 @@ export async function sendOTP(email: string): Promise<boolean> {
   }
 }
 
-export async function verifyOTP(email: string, token: string): Promise<boolean> {
+export async function verifyOTP(
+  email: string,
+  token: string
+): Promise<{ session: any; user: any } | null> {
   try {
-    const { data, error } = await supabase.auth.verifyOtp({
-      email,
-      token,
-      type: 'email',
+    const res = await fetch(`${EDGE_FUNCTION_BASE}/verify-otp`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ email, code: token }),
     });
-    if (error) throw error;
-    return !!data.session;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Verification failed');
+    return { session: data.session, user: data.user };
   } catch (error) {
     console.error('[OTP] Verify error:', error);
-    return false;
+    return null;
   }
 }
 

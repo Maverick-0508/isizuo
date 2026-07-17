@@ -37,16 +37,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   verifyOtp: async (email: string, token: string) => {
     try {
-      const { data, error } = await supabase.auth.verifyOtp({
-        email,
-        token,
-        type: 'email',
-      });
-      if (error) throw error;
-      if (data.session) {
+      const result = await verifyOTP(email, token);
+      if (result?.session) {
+        await supabase.auth.setSession({
+          access_token: result.session.access_token,
+          refresh_token: result.session.refresh_token,
+        });
         set({
-          session: data.session,
-          user: data.session.user as unknown as User,
+          session: result.session,
+          user: result.session.user as unknown as User,
           isAuthenticated: true,
         });
         return true;
