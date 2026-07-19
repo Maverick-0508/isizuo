@@ -6,28 +6,21 @@ import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants
 interface ButtonProps {
   title: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success';
+  variant?: 'primary' | 'secondary' | 'outline' | 'danger' | 'success' | 'gradient';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
   disabled?: boolean;
   icon?: keyof typeof Ionicons.glyphMap;
+  fullWidth?: boolean;
 }
 
 export function Button({
-  title,
-  onPress,
-  variant = 'primary',
-  size = 'md',
-  isLoading = false,
-  disabled = false,
-  icon,
+  title, onPress, variant = 'primary', size = 'md', isLoading, disabled, icon, fullWidth,
 }: ButtonProps) {
   return (
     <TouchableOpacity
-      style={[styles.button, styles[variant], styles[`size_${size}`], disabled && styles.disabled]}
-      onPress={onPress}
-      disabled={disabled || isLoading}
-      activeOpacity={0.7}
+      style={[styles.button, styles[variant], styles[`size_${size}`], fullWidth && styles.fullWidth, disabled && styles.disabled]}
+      onPress={onPress} disabled={disabled || isLoading} activeOpacity={0.8}
     >
       {isLoading ? (
         <ActivityIndicator color={variant === 'outline' ? COLORS.primary : COLORS.textInverse} size="small" />
@@ -50,7 +43,7 @@ interface CardProps {
 export function Card({ children, onPress, style }: CardProps) {
   const Component = onPress ? TouchableOpacity : View;
   return (
-    <Component style={[styles.card, style]} onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
+    <Component style={[styles.card, style]} onPress={onPress} activeOpacity={onPress ? 0.85 : 1}>
       {children}
     </Component>
   );
@@ -66,7 +59,7 @@ interface BadgeProps {
 export function Badge({ label, variant = 'info', size = 'sm', icon }: BadgeProps) {
   return (
     <View style={[styles.badge, styles[`badge_${variant}`], styles[`badge_${size}`]]}>
-      {icon && <Ionicons name={icon} size={size === 'sm' ? 10 : 12} color={COLORS[`verified`] || COLORS.info} style={{ marginRight: 4 }} />}
+      {icon && <Ionicons name={icon} size={size === 'sm' ? 10 : 12} color={COLORS[`verified`] || COLORS.info} style={{ marginRight: 3 }} />}
       <Text style={[styles.badgeText, styles[`badgeText_${size}`]]}>{label}</Text>
     </View>
   );
@@ -81,33 +74,21 @@ interface AvatarProps {
   colorIndex?: number;
 }
 
-const AVATAR_COLORS = ['#DC3545', '#0D6EFD', '#198754', '#FFC107', '#6F42C1', '#FD7E14', '#20C997', '#D63384'];
+const AVATAR_COLORS = ['#E84393', '#6C5CE7', '#00B894', '#FDCB6E', '#FF6B6B', '#74B9FF', '#A29BFE', '#55EFC4'];
 
 export function Avatar({ uri, size = 48, isVerified = false, isOnline, name, colorIndex = 0 }: AvatarProps) {
   const bgColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
   const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '';
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: bgColor }]}>
-      <Text style={[styles.avatarText, { fontSize: size / 3 }]}>{initials || '?'}</Text>
+      <Text style={[styles.avatarText, { fontSize: size / 2.8 }]}>{initials || '?'}</Text>
       {isVerified && (
-        <View style={[styles.verifiedBadge, { bottom: -1, right: -1, width: size > 40 ? 18 : 14, height: size > 40 ? 18 : 14, borderRadius: size > 40 ? 9 : 7 }]}>
-          <Ionicons name="checkmark" size={size > 40 ? 10 : 8} color={COLORS.textInverse} />
+        <View style={[styles.verifiedBadge, { bottom: -2, right: -2, width: size > 40 ? 20 : 14, height: size > 40 ? 20 : 14, borderRadius: size > 40 ? 10 : 7 }]}>
+          <Ionicons name="checkmark" size={size > 40 ? 11 : 8} color={COLORS.textInverse} />
         </View>
       )}
       {isOnline !== undefined && (
-        <View
-          style={[
-            styles.onlineIndicator,
-            {
-              backgroundColor: isOnline ? COLORS.success : COLORS.textLight,
-              bottom: size > 40 ? 2 : 0,
-              right: size > 40 ? 2 : 0,
-              width: size > 40 ? 12 : 8,
-              height: size > 40 ? 12 : 8,
-              borderRadius: size > 40 ? 6 : 4,
-            },
-          ]}
-        />
+        <View style={[styles.onlineIndicator, { backgroundColor: isOnline ? COLORS.success : COLORS.textLight, bottom: size > 40 ? 1 : 0, right: size > 40 ? 1 : 0, width: size > 40 ? 12 : 8, height: size > 40 ? 12 : 8, borderRadius: size > 40 ? 6 : 4 }]} />
       )}
     </View>
   );
@@ -125,7 +106,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
   return (
     <View style={styles.emptyState}>
       <View style={styles.emptyIconContainer}>
-        <Ionicons name={icon} size={48} color={COLORS.textLight} />
+        <Ionicons name={icon} size={44} color={COLORS.primaryLight} />
       </View>
       <Text style={styles.emptyTitle}>{title}</Text>
       <Text style={styles.emptyMessage}>{message}</Text>
@@ -138,7 +119,7 @@ export function EmptyState({ icon, title, message, actionLabel, onAction }: Empt
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: BORDER_RADIUS.lg,
+    borderRadius: BORDER_RADIUS.xl,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
@@ -148,26 +129,27 @@ const styles = StyleSheet.create({
   outline: { backgroundColor: 'transparent', borderWidth: 1.5, borderColor: COLORS.primary },
   danger: { backgroundColor: COLORS.danger },
   success: { backgroundColor: COLORS.safe },
+  gradient: { backgroundColor: COLORS.primary },
   size_sm: { paddingVertical: 10, paddingHorizontal: SPACING.md },
   size_md: { paddingVertical: 14, paddingHorizontal: SPACING.lg },
-  size_lg: { paddingVertical: SPACING.lg, paddingHorizontal: SPACING.xl },
+  size_lg: { paddingVertical: 16, paddingHorizontal: SPACING.xl },
+  fullWidth: { width: '100%' },
   disabled: { opacity: 0.5 },
   content: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  text: { fontWeight: '600' },
+  text: { fontWeight: '700' },
   primary_text: { color: COLORS.textInverse },
   secondary_text: { color: COLORS.textInverse },
   outline_text: { color: COLORS.primary },
   danger_text: { color: COLORS.textInverse },
   success_text: { color: COLORS.textInverse },
+  gradient_text: { color: COLORS.textInverse },
   text_sm: { fontSize: FONT_SIZES.sm },
   text_md: { fontSize: FONT_SIZES.md },
   text_lg: { fontSize: FONT_SIZES.lg },
   card: {
     backgroundColor: COLORS.card,
-    borderRadius: BORDER_RADIUS.xl,
+    borderRadius: BORDER_RADIUS.lg,
     padding: SPACING.md,
-    borderWidth: 1,
-    borderColor: COLORS.border,
     ...SHADOWS.sm,
   },
   badge: {
@@ -176,25 +158,25 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.full,
     alignSelf: 'flex-start',
   },
-  badge_success: { backgroundColor: '#D1E7DD' },
-  badge_warning: { backgroundColor: '#FFF3CD' },
-  badge_error: { backgroundColor: '#F8D7DA' },
-  badge_info: { backgroundColor: '#CFF4FC' },
-  badge_verified: { backgroundColor: '#CFF4FC' },
-  badge_premium: { backgroundColor: '#FFF3CD' },
+  badge_success: { backgroundColor: '#D4F5ED' },
+  badge_warning: { backgroundColor: '#FEF3D6' },
+  badge_error: { backgroundColor: '#FFE0E0' },
+  badge_info: { backgroundColor: '#E0EDFF' },
+  badge_verified: { backgroundColor: '#E0EDFF' },
+  badge_premium: { backgroundColor: '#FEF3D6' },
   badge_sm: { paddingVertical: 3, paddingHorizontal: 10 },
   badge_md: { paddingVertical: 5, paddingHorizontal: 12 },
-  badgeText_sm: { fontSize: FONT_SIZES.xs, fontWeight: '500', color: COLORS.text },
-  badgeText_md: { fontSize: FONT_SIZES.sm, fontWeight: '500', color: COLORS.text },
+  badgeText_sm: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.text },
+  badgeText_md: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text },
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarText: { color: COLORS.textInverse, fontWeight: '700' },
+  avatarText: { color: COLORS.textInverse, fontWeight: '800' },
   verifiedBadge: {
     position: 'absolute',
-    backgroundColor: COLORS.verified,
+    backgroundColor: COLORS.info,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
@@ -215,7 +197,7 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: COLORS.surfaceDark,
+    backgroundColor: COLORS.primary + '12',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: SPACING.lg,

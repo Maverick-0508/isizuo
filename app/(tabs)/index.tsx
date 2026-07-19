@@ -1,259 +1,123 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-  Dimensions,
-} from 'react-native';
-import { router } from 'expo-router';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
-import { useMatchingStore, useAuthStore } from '@/stores';
+import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
-import { Card, Badge, Button, Avatar, EmptyState } from '@/components/ui';
-import { sendMatchNotification } from '@/services/sms';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { Button, Badge, Avatar } from '@/components/ui';
 
 const { width } = Dimensions.get('window');
-const SAMPLE_NAMES = ['Amara', 'Kofi', 'Nia', 'Tendai', 'Zuri', 'Kwame', 'Aisha', 'Jabari'];
-const SAMPLE_BIOS = [
-  'Love cooking traditional dishes and exploring new cultures',
-  'Software engineer by day, musician by night. Looking for genuine connections',
-  'Passionate about education and community development',
-  'Adventure seeker. Love hiking, photography, and African art',
-  'Family is everything. Looking for someone who shares my values',
-  'Entrepreneur building the future of fintech in Africa',
-  'Medical student with a love for dance and storytelling',
-  'Creative soul who loves fashion, travel, and good conversations',
+
+const SAMPLE_MATCHES = [
+  { id: '1', name: 'Amara O.', age: 26, bio: 'Lagos • Software Engineer', isVerified: true, isPremium: true, community: 'Yoruba', interests: ['Tech', 'Travel', 'Cooking'], lastActive: '2h ago' },
+  { id: '2', name: 'Zainab K.', age: 24, bio: 'Nairobi • Medical Student', isVerified: true, isPremium: false, community: 'Swahili', interests: ['Reading', 'Fitness', 'Music'], lastActive: '5h ago' },
+  { id: '3', name: 'Fatima A.', age: 28, bio: 'Addis Ababa • Architect', isVerified: false, isPremium: true, community: 'Amhara', interests: ['Art', 'Photography', 'Fashion'], lastActive: '1d ago' },
+  { id: '4', name: 'Ngozi C.', age: 25, bio: 'Abuja • Lawyer', isVerified: true, isPremium: true, community: 'Igbo', interests: ['Law', 'Dance', 'Cooking'], lastActive: '30m ago' },
+  { id: '5', name: 'Aisha M.', age: 27, bio: 'Johannesburg • Entrepreneur', isVerified: true, isPremium: false, community: 'Zulu', interests: ['Business', 'Travel', 'Music'], lastActive: '3h ago' },
+  { id: '6', name: 'Chidera N.', age: 23, bio: 'Port Harcourt • Content Creator', isVerified: false, isPremium: false, community: 'Igbo', interests: ['Photography', 'Dance', 'Film'], lastActive: '12h ago' },
 ];
-const SAMPLE_INTERESTS = [
-  ['Music', 'Cooking', 'Travel'], ['Technology', 'Entrepreneurship', 'Fitness'],
-  ['Art', 'Photography', 'Dance'], ['Education', 'Volunteering', 'Reading'],
-  ['Sports', 'Gaming', 'Film'], ['Fashion', 'Art', 'Travel'],
-  ['Agriculture', 'Environment', 'Cooking'], ['Music', 'Dance', 'Fitness'],
-];
-const SAMPLE_LANGUAGES = [['en', 'yo'], ['en', 'sw'], ['en', 'ha'], ['en', 'am'], ['en']];
 
 export default function MatchesScreen() {
-  const { matches, fetchPotentialMatches, potentialMatches, currentMatchIndex, likeUser, passUser, superLikeUser } = useMatchingStore();
-  const { user } = useAuthStore();
   const { t } = useTranslation();
-  const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
+  const [activeTab, setActiveTab] = useState<'matches' | 'likes' | 'visits'>('matches');
 
-  useEffect(() => {
-    fetchPotentialMatches();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchPotentialMatches();
-    setRefreshing(false);
-  };
-
-  const currentProfile = potentialMatches[currentMatchIndex];
-
-  const handleLike = async () => {
-    if (!currentProfile) return;
-    await likeUser(currentProfile.id);
-    if (currentProfile.phone) {
-      sendMatchNotification(currentProfile.phone, user?.name || 'Someone');
-    }
-  };
-
-  const handlePass = () => {
-    if (currentProfile) passUser(currentProfile.id);
-  };
-
-  const handleSuperLike = async () => {
-    if (!currentProfile) return;
-    await superLikeUser(currentProfile.id);
-    if (currentProfile.phone) {
-      sendMatchNotification(currentProfile.phone, user?.name || 'Someone');
-    }
-  };
-
-  const nameIndex = currentMatchIndex % SAMPLE_NAMES.length;
-
-  if (!currentProfile) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <Ionicons name="heart" size={24} color={COLORS.textInverse} />
-            <Text style={styles.logo}>{t('app_name')}</Text>
-          </View>
-        </View>
-        <EmptyState
-          icon="heart-dislike-outline"
-          title={t('no_matches')}
-          message="We're finding people who match your preferences. Check back soon!"
-          actionLabel={t('retry')}
-          onAction={fetchPotentialMatches}
-        />
-      </View>
-    );
-  }
+  const tabs = [
+    { key: 'matches' as const, label: t('matches'), icon: 'heart' as const },
+    { key: 'likes' as const, label: t('likes'), icon: 'star' as const },
+    { key: 'visits' as const, label: t('profile_views'), icon: 'eye' as const },
+  ];
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Ionicons name="heart" size={24} color={COLORS.textInverse} />
-          <Text style={styles.logo}>{t('app_name')}</Text>
+        <View>
+          <Text style={styles.headerTitle}>Isizuo</Text>
+          <Text style={styles.headerSubtitle}>{t('discover')}</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/ussd')}>
-            <Ionicons name="hardware-chip-outline" size={20} color={COLORS.textInverse} />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton} onPress={() => router.push('/safety')}>
-            <Ionicons name="shield-checkmark-outline" size={20} color={COLORS.textInverse} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity style={styles.settingsBtn}>
+          <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
+          <View style={styles.notifDot} />
+        </TouchableOpacity>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
-        showsVerticalScrollIndicator={false}
-      >
-        <Card style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <Avatar uri={currentProfile.photos?.[0]} size={72} isVerified={currentProfile.isVerified} name={currentProfile.name || SAMPLE_NAMES[nameIndex]} colorIndex={nameIndex} />
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>
-                {currentProfile.name || SAMPLE_NAMES[nameIndex]}, {currentProfile.age || 25 + (currentMatchIndex % 10)}
-              </Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={14} color={COLORS.textLight} />
-                <Text style={styles.profileLocation}>
-                  {currentProfile.community || 'Nairobi, Kenya'}
-                </Text>
-              </View>
-              <View style={styles.badgeRow}>
-                {currentProfile.isVerified && <Badge label="Verified" variant="verified" size="sm" icon="checkmark-circle" />}
-                {currentProfile.lookingFor && (
-                  <Badge label={t(`looking_${currentProfile.lookingFor}`)} variant="info" size="sm" />
-                )}
-              </View>
-            </View>
-          </View>
-
-          {currentProfile.bio && (
-            <Text style={styles.bio}>{currentProfile.bio}</Text>
-          )}
-          {!currentProfile.bio && (
-            <Text style={styles.bio}>{SAMPLE_BIOS[nameIndex]}</Text>
-          )}
-
-          <View style={styles.compatibilitySection}>
-            <Text style={styles.compatibilityTitle}>Compatibility</Text>
-            <View style={styles.scoreRow}>
-              <View style={styles.scoreItem}>
-                <View style={styles.scoreCircle}>
-                  <Text style={styles.scoreValue}>
-                    {currentProfile._compatibilityScore || Math.floor(Math.random() * 20) + 75}%
-                  </Text>
-                </View>
-                <Text style={styles.scoreLabel}>Overall</Text>
-              </View>
-              <View style={styles.scoreItem}>
-                <View style={[styles.scoreCircle, { backgroundColor: COLORS.secondary + '15' }]}>
-                  <Text style={[styles.scoreValue, { color: COLORS.secondary }]}>
-                    {Math.floor(Math.random() * 25) + 65}%
-                  </Text>
-                </View>
-                <Text style={styles.scoreLabel}>Culture</Text>
-              </View>
-              <View style={styles.scoreItem}>
-                <View style={[styles.scoreCircle, { backgroundColor: COLORS.accent + '15' }]}>
-                  <Text style={[styles.scoreValue, { color: COLORS.accentDark }]}>
-                    {Math.floor(Math.random() * 25) + 55}%
-                  </Text>
-                </View>
-                <Text style={styles.scoreLabel}>Interests</Text>
-              </View>
-            </View>
-          </View>
-
-          {(currentProfile.interests?.length > 0) ? (
-            <View style={styles.interestsSection}>
-              <Text style={styles.sectionTitle}>Interests</Text>
-              <View style={styles.chipContainer}>
-                {currentProfile.interests.slice(0, 6).map((interest: string) => (
-                  <View key={interest} style={styles.chip}>
-                    <Text style={styles.chipText}>{interest}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.interestsSection}>
-              <Text style={styles.sectionTitle}>Interests</Text>
-              <View style={styles.chipContainer}>
-                {SAMPLE_INTERESTS[nameIndex].map((interest: string) => (
-                  <View key={interest} style={styles.chip}>
-                    <Text style={styles.chipText}>{interest}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {(currentProfile.languages?.length > 0) ? (
-            <View style={styles.interestsSection}>
-              <Text style={styles.sectionTitle}>Languages</Text>
-              <View style={styles.chipContainer}>
-                {currentProfile.languages.map((lang: string) => (
-                  <View key={lang} style={styles.chip}>
-                    <Text style={styles.chipText}>{lang.toUpperCase()}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          ) : (
-            <View style={styles.interestsSection}>
-              <Text style={styles.sectionTitle}>Languages</Text>
-              <View style={styles.chipContainer}>
-                {SAMPLE_LANGUAGES[nameIndex].map((lang: string) => (
-                  <View key={lang} style={styles.chip}>
-                    <Text style={styles.chipText}>{lang.toUpperCase()}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-        </Card>
-
-        <View style={styles.actionButtons}>
-          <TouchableOpacity style={[styles.actionButton, styles.passButton]} onPress={handlePass} activeOpacity={0.7}>
-            <Ionicons name="close" size={28} color={COLORS.textLight} />
+      <View style={styles.tabRow}>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab.key}
+            style={[styles.tabBtn, activeTab === tab.key && styles.tabBtnActive]}
+            onPress={() => setActiveTab(tab.key)}
+          >
+            <Ionicons name={tab.icon} size={16} color={activeTab === tab.key ? COLORS.primary : COLORS.textLight} />
+            <Text style={[styles.tabBtnText, activeTab === tab.key && styles.tabBtnTextActive]}>{tab.label}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.superLikeButton]} onPress={handleSuperLike} activeOpacity={0.7}>
-            <Ionicons name="star" size={28} color={COLORS.textInverse} />
-          </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.likeButton]} onPress={handleLike} activeOpacity={0.7}>
-            <Ionicons name="heart" size={28} color={COLORS.textInverse} />
-          </TouchableOpacity>
-        </View>
+        ))}
+      </View>
 
-        {matches.length > 0 && (
-          <View style={styles.matchedSection}>
-            <Text style={styles.sectionTitle}>Recent Matches</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              {matches.slice(0, 10).map((match, idx) => (
-                <TouchableOpacity
-                  key={match.id}
-                  style={styles.matchedItem}
-                  onPress={() => router.push(`/chat/${match.id}`)}
-                  activeOpacity={0.7}
-                >
-                  <Avatar size={56} name={SAMPLE_NAMES[idx % SAMPLE_NAMES.length]} colorIndex={idx} isOnline={idx % 3 === 0} />
-                  <Text style={styles.matchedName}>{SAMPLE_NAMES[idx % SAMPLE_NAMES.length]}</Text>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === 'matches' && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t('new_matches')}</Text>
+              <Badge label="6 new" variant="success" icon="sparkles" />
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newMatchesScroll}>
+              {SAMPLE_MATCHES.slice(0, 3).map((m) => (
+                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.85}>
+                  <View style={styles.newMatchAvatar}>
+                    <Avatar name={m.name} size={68} isVerified={m.isVerified} colorIndex={parseInt(m.id)} />
+                  </View>
+                  <Text style={styles.newMatchName} numberOfLines={1}>{m.name}</Text>
+                  <Text style={styles.newMatchTime}>{m.lastActive}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
+
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Recent conversations</Text>
+            </View>
+            {SAMPLE_MATCHES.map((match) => (
+              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.85}>
+                <Avatar name={match.name} size={52} isVerified={match.isVerified} isOnline={Math.random() > 0.5} colorIndex={parseInt(match.id)} />
+                <View style={styles.chatInfo}>
+                  <View style={styles.chatNameRow}>
+                    <Text style={styles.chatName}>{match.name}</Text>
+                    {match.isPremium && <Ionicons name="diamond" size={12} color={COLORS.premium} />}
+                    <Text style={styles.chatTime}>{match.lastActive}</Text>
+                  </View>
+                  <Text style={styles.chatLastMsg} numberOfLines={1}>
+                    {match.bio}
+                  </Text>
+                  <View style={styles.interestRow}>
+                    {match.interests.slice(0, 2).map((interest) => (
+                      <Badge key={interest} label={interest} variant="info" size="sm" />
+                    ))}
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </>
+        )}
+
+        {activeTab === 'likes' && (
+          <View style={styles.premiumPrompt}>
+            <Ionicons name="star" size={48} color={COLORS.accent} />
+            <Text style={styles.premiumTitle}>{t('likes_received')}</Text>
+            <Text style={styles.premiumDesc}>
+              Upgrade to see who liked your profile. Get unlimited swipes and more!
+            </Text>
+            <Button title={t('upgrade')} variant="gradient" onPress={() => {}} icon="diamond" fullWidth />
+          </View>
+        )}
+
+        {activeTab === 'visits' && (
+          <View style={styles.premiumPrompt}>
+            <Ionicons name="eye" size={48} color={COLORS.info} />
+            <Text style={styles.premiumTitle}>{t('profile_views')}</Text>
+            <Text style={styles.premiumDesc}>
+              See who viewed your profile in the last 30 days. Get premium to unlock this feature.
+            </Text>
+            <Button title={t('upgrade')} variant="gradient" onPress={() => {}} icon="diamond" fullWidth />
           </View>
         )}
       </ScrollView>
@@ -262,188 +126,47 @@ export default function MatchesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl + SPACING.md,
-    paddingBottom: SPACING.md,
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: SPACING.lg, paddingTop: 60, paddingBottom: SPACING.md,
+    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.sm,
   },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
+  headerTitle: { fontSize: FONT_SIZES.title, fontWeight: '900', color: COLORS.primary, letterSpacing: -1 },
+  headerSubtitle: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginTop: 2 },
+  settingsBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
+  notifDot: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary, borderWidth: 1.5, borderColor: COLORS.card },
+  tabRow: {
+    flexDirection: 'row', backgroundColor: COLORS.card, marginHorizontal: SPACING.lg, marginTop: SPACING.md,
+    borderRadius: BORDER_RADIUS.xl, padding: 4, ...SHADOWS.sm,
   },
-  logo: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: '800',
-    color: COLORS.textInverse,
-    letterSpacing: 0.5,
+  tabBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 10, borderRadius: BORDER_RADIUS.xl, gap: 4 },
+  tabBtnActive: { backgroundColor: COLORS.primary + '12' },
+  tabBtnText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textLight },
+  tabBtnTextActive: { color: COLORS.primary },
+  content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md, marginTop: SPACING.sm },
+  sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  newMatchesScroll: { marginBottom: SPACING.lg, marginLeft: -4 },
+  newMatchCard: { alignItems: 'center', marginRight: SPACING.md, width: 80 },
+  newMatchAvatar: { marginBottom: 6 },
+  newMatchName: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.text, textAlign: 'center' },
+  newMatchTime: { fontSize: 10, color: COLORS.textLight, marginTop: 1 },
+  chatCard: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.sm, ...SHADOWS.sm,
   },
-  headerActions: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
+  chatInfo: { flex: 1, marginLeft: SPACING.md },
+  chatNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 2 },
+  chatName: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text },
+  chatTime: { fontSize: 10, color: COLORS.textLight, marginLeft: 'auto' },
+  chatLastMsg: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginBottom: 4 },
+  interestRow: { flexDirection: 'row', gap: 4 },
+  premiumPrompt: {
+    alignItems: 'center', padding: SPACING.xl, backgroundColor: COLORS.card,
+    borderRadius: BORDER_RADIUS.lg, marginTop: SPACING.lg, ...SHADOWS.sm,
   },
-  headerButton: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  scrollContent: {
-    padding: SPACING.lg,
-    paddingBottom: 100,
-  },
-  profileCard: {
-    marginBottom: SPACING.lg,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    marginBottom: SPACING.md,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  profileName: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: 2,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: SPACING.xs,
-  },
-  profileLocation: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textLight,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: SPACING.xs,
-    flexWrap: 'wrap',
-  },
-  bio: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    lineHeight: 22,
-    marginBottom: SPACING.md,
-  },
-  compatibilitySection: {
-    marginBottom: SPACING.md,
-  },
-  compatibilityTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.textLight,
-    marginBottom: SPACING.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  scoreRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  scoreItem: {
-    alignItems: 'center',
-  },
-  scoreCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: COLORS.primary + '12',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.xs,
-  },
-  scoreValue: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.primary,
-  },
-  scoreLabel: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textLight,
-    fontWeight: '500',
-  },
-  interestsSection: {
-    marginTop: SPACING.md,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.textLight,
-    marginBottom: SPACING.sm,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: SPACING.xs,
-  },
-  chip: {
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 6,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.primary + '0D',
-    borderWidth: 1,
-    borderColor: COLORS.primary + '20',
-  },
-  chipText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: SPACING.xl,
-    marginBottom: SPACING.xl,
-    marginTop: SPACING.sm,
-  },
-  actionButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...SHADOWS.md,
-  },
-  passButton: {
-    backgroundColor: COLORS.surface,
-    borderWidth: 1.5,
-    borderColor: COLORS.border,
-  },
-  superLikeButton: {
-    backgroundColor: COLORS.accent,
-  },
-  likeButton: {
-    backgroundColor: COLORS.primary,
-  },
-  matchedSection: {
-    marginTop: SPACING.sm,
-  },
-  matchedItem: {
-    alignItems: 'center',
-    marginRight: SPACING.md,
-    width: 68,
-  },
-  matchedName: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.text,
-    marginTop: SPACING.xs,
-    fontWeight: '500',
-  },
+  premiumTitle: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginTop: SPACING.md, marginBottom: SPACING.sm },
+  premiumDesc: { fontSize: FONT_SIZES.md, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 20 },
 });
