@@ -29,14 +29,10 @@ export default function LoginScreen() {
     }
     setIsLoading(true);
     try {
-      const result = await signIn(email);
-      if (result === 'instant') {
-        router.replace('/(tabs)');
-      } else {
-        router.push({ pathname: '/(auth)/verify', params: { email } });
-      }
+      await signIn(email);
+      router.replace('/(tabs)');
     } catch (error) {
-      Alert.alert('Error', 'Failed to send verification code. Please try again.');
+      Alert.alert('Error', 'Failed to sign in. Please try again.');
     } finally {
       setIsLoading(false);
     }

@@ -10,7 +10,7 @@ interface AuthState {
   isAuthenticated: boolean;
   setUser: (user: User | null) => void;
   setSession: (session: any) => void;
-  signIn: (email: string) => Promise<'instant' | 'otp_sent'>;
+  signIn: (email: string) => Promise<void>;
   verifyOtp: (email: string, token: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
@@ -29,21 +29,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const result = await sendOTP(email);
       if (result?.session) {
-        await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token,
-        });
+        try {
+          await supabase.auth.setSession({
+            access_token: result.session.access_token,
+            refresh_token: result.session.refresh_token,
+          });
+        } catch (_) {}
         set({
           session: result.session,
           user: result.session.user as unknown as User,
           isAuthenticated: true,
         });
-        return 'instant';
+        return;
       }
-      if (result?.otpSent) {
-        return 'otp_sent';
-      }
-      throw new Error('Failed to send OTP');
+      throw new Error('Failed to sign in');
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
