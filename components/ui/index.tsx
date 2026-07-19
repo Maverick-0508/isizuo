@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
 
 interface ButtonProps {
   title: string;
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   fullWidth: { width: '100%' },
   disabled: { opacity: 0.5 },
   content: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm },
-  text: { fontWeight: '700' },
+  text: { fontFamily: FONTS.bold },
   primary_text: { color: COLORS.textInverse },
   secondary_text: { color: COLORS.textInverse },
   outline_text: { color: COLORS.primary },
@@ -166,14 +166,14 @@ const styles = StyleSheet.create({
   badge_premium: { backgroundColor: '#FEF3D6' },
   badge_sm: { paddingVertical: 3, paddingHorizontal: 10 },
   badge_md: { paddingVertical: 5, paddingHorizontal: 12 },
-  badgeText_sm: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.text },
-  badgeText_md: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.text },
+  badgeText_sm: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.text },
+  badgeText_md: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text },
   avatar: {
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarText: { color: COLORS.textInverse, fontWeight: '800' },
+  avatarText: { color: COLORS.textInverse, fontFamily: FONTS.bold },
   verifiedBadge: {
     position: 'absolute',
     backgroundColor: COLORS.info,
@@ -204,13 +204,13 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     marginBottom: SPACING.sm,
     textAlign: 'center',
   },
   emptyMessage: {
-    fontSize: FONT_SIZES.md,
+    fontSize: FONT_SIZES.md, fontFamily: FONTS.regular,
     color: COLORS.textLight,
     textAlign: 'center',
     marginBottom: SPACING.lg,

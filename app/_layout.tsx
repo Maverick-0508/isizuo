@@ -2,6 +2,15 @@ import React, { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { useFonts } from 'expo-font';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+  Inter_900Black,
+} from '@expo-google-fonts/inter';
 import { useAuthStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
@@ -30,6 +39,15 @@ export default function RootLayout() {
   const { setUser, setSession } = useAuthStore();
   const [ready, setReady] = useState(false);
 
+  const [fontsLoaded] = useFonts({
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
+    Inter_900Black,
+  });
+
   useEffect(() => {
     const timeout = setTimeout(() => setReady(true), 2000);
 
@@ -52,22 +70,26 @@ export default function RootLayout() {
     };
   }, []);
 
-  if (!ready) {
+  if (!ready || !fontsLoaded) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={styles.loadingText}>Loading Isizuo...</Text>
+        <View style={styles.loadingLogo}>
+          <Text style={styles.loadingLogoI}>I</Text>
+        </View>
+        <Text style={styles.loadingText}>Isizuo</Text>
+        <ActivityIndicator size="small" color={COLORS.primary} style={styles.loadingSpinner} />
       </View>
     );
   }
 
   return (
     <AuthGuard>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
       <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.background },
+          animation: 'fade',
         }}
       >
         <Stack.Screen name="(auth)" />
@@ -91,9 +113,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: COLORS.background,
   },
+  loadingLogo: {
+    width: 72,
+    height: 72,
+    borderRadius: 20,
+    backgroundColor: COLORS.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingLogoI: {
+    fontSize: 36,
+    fontFamily: 'Inter_900Black',
+    color: COLORS.textInverse,
+    marginTop: -2,
+  },
   loadingText: {
-    color: COLORS.primary,
-    marginTop: 12,
-    fontSize: 16,
+    fontFamily: 'Inter_800ExtraBold',
+    color: COLORS.text,
+    marginTop: 16,
+    fontSize: 24,
+    letterSpacing: -0.5,
+  },
+  loadingSpinner: {
+    marginTop: 20,
   },
 });

@@ -40,14 +40,23 @@ export const SPACING = {
 };
 
 export const FONT_SIZES = {
-  xs: 10,
-  sm: 12,
-  md: 14,
-  lg: 16,
-  xl: 18,
-  xxl: 24,
-  title: 32,
-  hero: 40,
+  xs: 12,
+  sm: 13,
+  md: 15,
+  lg: 17,
+  xl: 20,
+  xxl: 26,
+  title: 34,
+  hero: 44,
+};
+
+export const FONTS = {
+  regular: 'Inter_400Regular',
+  medium: 'Inter_500Medium',
+  semiBold: 'Inter_600SemiBold',
+  bold: 'Inter_700Bold',
+  extraBold: 'Inter_800ExtraBold',
+  black: 'Inter_900Black',
 };
 
 export const BORDER_RADIUS = {
