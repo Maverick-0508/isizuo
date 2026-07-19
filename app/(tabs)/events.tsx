@@ -1,375 +1,213 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  RefreshControl,
-} from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
-import { useEventStore, useAuthStore } from '@/stores';
 import { useTranslation } from '@/hooks';
-import { Card, Badge, Button, EmptyState } from '@/components/ui';
-import { sendEventReminder } from '@/services/sms';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { Badge, Button, Card } from '@/components/ui';
+
+const { width } = Dimensions.get('window');
+
+const EVENT_CATEGORIES = [
+  { key: 'all', label: 'All Events', icon: 'globe' },
+  { key: 'social', label: 'Social', icon: 'people' },
+  { key: 'professional', label: 'Professional', icon: 'briefcase' },
+  { key: 'cultural', label: 'Cultural', icon: 'earth' },
+  { key: 'sports', label: 'Sports', icon: 'football' },
+];
 
 const SAMPLE_EVENTS = [
   {
-    id: '1', title: 'Lagos Tech Meetup', description: 'Connect with Africa\'s brightest tech minds. Lightning talks, networking, and free food.',
-    date: '2026-08-15', time: '6:00 PM', category: 'professional', location: { name: 'Eko Hotel, Lagos' },
-    currentAttendees: 89, maxAttendees: 200,
+    id: '1', title: 'Lagos Tech Meetup', date: 'Sat, Jul 26', time: '6:00 PM',
+    location: 'Eko Convention Centre, Lagos', category: 'professional',
+    attendees: 128, isFree: true, color: '#6C5CE7',
+    description: 'Connect with Africa\'s brightest tech minds.',
   },
   {
-    id: '2', title: 'Nairobi Food Festival', description: 'Taste the best of East African cuisine. Over 50 vendors and live music.',
-    date: '2026-08-22', time: '11:00 AM', category: 'social', location: { name: 'Uhuru Gardens, Nairobi' },
-    currentAttendees: 234, maxAttendees: 500,
+    id: '2', title: 'Nairobi Sunset Mixer', date: 'Fri, Jul 25', time: '5:00 PM',
+    location: 'Nairobi Arboretum', category: 'social',
+    attendees: 86, isFree: true, color: '#E84393',
+    description: 'Network over drinks and live music.',
   },
   {
-    id: '3', title: 'Kigali Cultural Night', description: 'An evening of Rwandan poetry, dance, and storytelling under the stars.',
-    date: '2026-09-05', time: '7:30 PM', category: 'cultural', location: { name: 'Kigali Convention Centre' },
-    currentAttendees: 45, maxAttendees: 150,
+    id: '3', title: 'Afro-Cultural Night', date: 'Sat, Aug 2', time: '7:00 PM',
+    location: 'Addis Ababa Cultural Centre', category: 'cultural',
+    attendees: 240, isFree: false, color: '#FDCB6E',
+    description: 'Celebrate African heritage through art and dance.',
   },
   {
-    id: '4', title: 'Accra Marathon 2026', description: 'Run for a cause! proceeds go to building schools in rural communities.',
-    date: '2026-09-12', time: '6:00 AM', category: 'social', location: { name: 'Independence Square, Accra' },
-    currentAttendees: 312, maxAttendees: 1000,
+    id: '4', title: '5K Charity Run', date: 'Sun, Jul 27', time: '7:00 AM',
+    location: 'Johannesburg Zoo Lake', category: 'sports',
+    attendees: 64, isFree: false, color: '#00B894',
+    description: 'Run for a cause. All proceeds go to education.',
   },
   {
-    id: '5', title: 'Ethiopian Coffee Ceremony', description: 'Experience the traditional Ethiopian coffee ceremony and learn about its cultural significance.',
-    date: '2026-09-20', time: '3:00 PM', category: 'cultural', location: { name: 'Addis Ababa Cultural Center' },
-    currentAttendees: 28, maxAttendees: 60,
+    id: '5', title: 'Women in Business Summit', date: 'Aug 15', time: '9:00 AM',
+    location: 'Abuja International Conference Centre', category: 'professional',
+    attendees: 310, isFree: false, color: '#A29BFE',
+    description: 'Empowering women entrepreneurs across Africa.',
   },
 ];
 
 export default function EventsScreen() {
-  const { events, userEvents, fetchEvents, rsvpEvent } = useEventStore();
-  const { user } = useAuthStore();
   const { t } = useTranslation();
-  const [selectedTab, setSelectedTab] = useState<'discover' | 'my'>('discover');
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [refreshing, setRefreshing] = useState(false);
+  const [activeCategory, setActiveCategory] = useState('all');
 
-  useEffect(() => {
-    fetchEvents();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchEvents();
-    setRefreshing(false);
-  };
-
-  const categories = [
-    { key: 'all', label: 'All', icon: 'globe-outline' as const },
-    { key: 'social', label: 'Social', icon: 'people-outline' as const },
-    { key: 'professional', label: 'Work', icon: 'briefcase-outline' as const },
-    { key: 'cultural', label: 'Cultural', icon: 'color-palette-outline' as const },
-    { key: 'religious', label: 'Faith', icon: 'book-outline' as const },
-    { key: 'hobby', label: 'Hobby', icon: 'heart-outline' as const },
-  ];
-
-  const displayEvents = events.length > 0
-    ? (selectedTab === 'discover'
-        ? events.filter((e) => selectedCategory === 'all' || e.category === selectedCategory)
-        : events.filter((e) => userEvents.includes(e.id)))
-    : (selectedTab === 'discover'
-        ? SAMPLE_EVENTS.filter((e) => selectedCategory === 'all' || e.category === selectedCategory)
-        : []);
-
-  const categoryColors: Record<string, string> = {
-    social: COLORS.primary,
-    professional: COLORS.info,
-    cultural: COLORS.accentDark,
-    religious: '#6F42C1',
-    hobby: COLORS.secondary,
-  };
+  const filteredEvents = activeCategory === 'all'
+    ? SAMPLE_EVENTS
+    : SAMPLE_EVENTS.filter(e => e.category === activeCategory);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>{t('events')}</Text>
-        <TouchableOpacity style={styles.createBtn} activeOpacity={0.7}>
+        <View>
+          <Text style={styles.headerTitle}>{t('events')}</Text>
+          <Text style={styles.headerSubtitle}>Discover events near you</Text>
+        </View>
+        <TouchableOpacity style={styles.createBtn}>
           <Ionicons name="add" size={22} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabRow}>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'discover' && styles.tabActive]}
-          onPress={() => setSelectedTab('discover')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="compass-outline" size={16} color={selectedTab === 'discover' ? COLORS.textInverse : COLORS.textLight} />
-          <Text style={[styles.tabText, selectedTab === 'discover' && styles.tabTextActive]}>
-            {t('discover_events')}
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, selectedTab === 'my' && styles.tabActive]}
-          onPress={() => setSelectedTab('my')}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="bookmark-outline" size={16} color={selectedTab === 'my' ? COLORS.textInverse : COLORS.textLight} />
-          <Text style={[styles.tabText, selectedTab === 'my' && styles.tabTextActive]}>
-            {t('my_events')}
-          </Text>
+      <View style={styles.searchBar}>
+        <Ionicons name="search" size={18} color={COLORS.textLight} />
+        <Text style={styles.searchPlaceholder}>Search events...</Text>
+        <TouchableOpacity style={styles.searchFilter}>
+          <Ionicons name="options-outline" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
-        <View style={styles.categoryRow}>
-          {categories.map((cat) => (
-            <TouchableOpacity
-              key={cat.key}
-              style={[styles.categoryPill, selectedCategory === cat.key && styles.categoryPillActive]}
-              onPress={() => setSelectedCategory(cat.key)}
-              activeOpacity={0.7}
-            >
-              <Ionicons name={cat.icon} size={14} color={selectedCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
-              <Text style={[styles.categoryLabel, selectedCategory === cat.key && styles.categoryLabelActive]}>
-                {cat.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll} contentContainerStyle={styles.categoriesContent}>
+        {EVENT_CATEGORIES.map((cat) => (
+          <TouchableOpacity
+            key={cat.key}
+            style={[styles.categoryPill, activeCategory === cat.key && styles.categoryPillActive]}
+            onPress={() => setActiveCategory(cat.key)}
+          >
+            <Ionicons name={cat.icon as any} size={14} color={activeCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
+            <Text style={[styles.categoryText, activeCategory === cat.key && styles.categoryTextActive]}>{cat.label}</Text>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
-      >
-        {displayEvents.length === 0 ? (
-          <EmptyState
-            icon="calendar-outline"
-            title="No events found"
-            message="Check back later or create your own event!"
-            actionLabel={t('create_event')}
-            onAction={() => {}}
-          />
-        ) : (
-          displayEvents.map((event) => (
-            <Card key={event.id} style={styles.eventCard}>
-              <View style={styles.eventHeader}>
-                <View style={[styles.eventDateBadge, { backgroundColor: (categoryColors[event.category] || COLORS.primary) + '15' }]}>
-                  <Text style={[styles.eventDay, { color: categoryColors[event.category] || COLORS.primary }]}>
-                    {new Date(event.date).getDate()}
-                  </Text>
-                  <Text style={[styles.eventMonth, { color: categoryColors[event.category] || COLORS.primary }]}>
-                    {new Date(event.date).toLocaleString('default', { month: 'short' })}
-                  </Text>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Featured Events</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>See all</Text>
+          </TouchableOpacity>
+        </View>
+
+        {filteredEvents.map((event, index) => (
+          <TouchableOpacity key={event.id} style={[styles.eventCard, index === 0 && styles.eventCardFirst]} activeOpacity={0.85}>
+            <View style={[styles.eventCover, { backgroundColor: event.color + '18' }]}>
+              <View style={[styles.eventIconCircle, { backgroundColor: event.color + '25' }]}>
+                <Ionicons name={EVENT_CATEGORIES.find(c => c.key === event.category)?.icon as any || 'calendar'} size={24} color={event.color} />
+              </View>
+            </View>
+            <View style={styles.eventInfo}>
+              <View style={styles.eventDateBadge}>
+                <Text style={styles.eventDateText}>{event.date}</Text>
+                <Text style={styles.eventTimeText}>{event.time}</Text>
+              </View>
+              <Text style={styles.eventTitle}>{event.title}</Text>
+              <Text style={styles.eventDesc} numberOfLines={2}>{event.description}</Text>
+              <View style={styles.eventMeta}>
+                <View style={styles.eventMetaItem}>
+                  <Ionicons name="location-outline" size={12} color={COLORS.textLight} />
+                  <Text style={styles.eventMetaText} numberOfLines={1}>{event.location}</Text>
                 </View>
-                <View style={styles.eventInfo}>
-                  <Text style={styles.eventTitle}>{event.title}</Text>
-                  <View style={styles.eventMetaRow}>
-                    <Ionicons name="location-outline" size={12} color={COLORS.textLight} />
-                    <Text style={styles.eventLocation}>{event.location?.name || 'TBA'}</Text>
-                  </View>
-                  <View style={styles.eventMetaRow}>
-                    <Ionicons name="time-outline" size={12} color={COLORS.textLight} />
-                    <Text style={styles.eventTime}>{event.time}</Text>
-                  </View>
+                <View style={styles.eventMetaItem}>
+                  <Ionicons name="people-outline" size={12} color={COLORS.textLight} />
+                  <Text style={styles.eventMetaText}>{event.attendees} going</Text>
                 </View>
               </View>
-
-              <Text style={styles.eventDescription} numberOfLines={2}>
-                {event.description}
-              </Text>
-
-              <View style={styles.eventFooter}>
-                <View style={styles.eventMeta}>
-                  <Badge label={event.category} variant="info" size="sm" />
-                  <View style={styles.attendeeRow}>
-                    <Ionicons name="people-outline" size={12} color={COLORS.textLight} />
-                    <Text style={styles.attendeeCount}>
-                      {event.currentAttendees}/{event.maxAttendees}
-                    </Text>
-                  </View>
-                </View>
-                <Button
-                  title={userEvents.includes(event.id) ? 'Going' : t('rsvp')}
-                  onPress={() => {
-                    rsvpEvent(event.id);
-                    if (user?.phone && !userEvents.includes(event.id)) {
-                      sendEventReminder(user.phone, event.title, `${event.date} ${event.time}`);
-                    }
-                  }}
-                  variant={userEvents.includes(event.id) ? 'success' : 'primary'}
-                  size="sm"
-                  icon={userEvents.includes(event.id) ? 'checkmark' : undefined}
-                />
+              <View style={styles.eventActions}>
+                {event.isFree ? (
+                  <Badge label="Free" variant="success" icon="checkmark-circle" />
+                ) : (
+                  <Badge label="Paid" variant="info" icon="card" />
+                )}
+                <Button title="RSVP" variant="primary" size="sm" icon="checkmark" />
               </View>
-            </Card>
-          ))
-        )}
+            </View>
+          </TouchableOpacity>
+        ))}
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Your Events</Text>
+          <TouchableOpacity>
+            <Text style={styles.seeAll}>See all</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.emptyEvents}>
+          <Ionicons name="calendar-outline" size={40} color={COLORS.primaryLight} />
+          <Text style={styles.emptyTitle}>No upcoming events</Text>
+          <Text style={styles.emptyDesc}>RSVP to events to see them here</Text>
+        </View>
       </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl + SPACING.md,
-    paddingBottom: SPACING.md,
-    backgroundColor: COLORS.primary,
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: SPACING.lg, paddingTop: 60, paddingBottom: SPACING.sm,
+    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.sm,
   },
-  title: {
-    fontSize: FONT_SIZES.xxl,
-    fontWeight: '800',
-    color: COLORS.textInverse,
-    letterSpacing: 0.5,
-  },
+  headerTitle: { fontSize: FONT_SIZES.title, fontWeight: '900', color: COLORS.primary, letterSpacing: -1 },
+  headerSubtitle: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginTop: 2 },
   createBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center',
   },
-  tabRow: {
-    flexDirection: 'row',
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.md,
-    gap: SPACING.sm,
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, marginHorizontal: SPACING.lg,
+    marginTop: SPACING.md, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.md, paddingVertical: 12,
+    gap: SPACING.sm, ...SHADOWS.sm,
   },
-  tab: {
-    flex: 1,
-    flexDirection: 'row',
-    paddingVertical: 10,
-    borderRadius: BORDER_RADIUS.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    backgroundColor: COLORS.surface,
-  },
-  tabActive: {
-    backgroundColor: COLORS.primary,
-  },
-  tabText: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  tabTextActive: {
-    color: COLORS.textInverse,
-  },
-  categoryScroll: {
-    paddingLeft: SPACING.lg,
-    marginTop: SPACING.md,
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    gap: SPACING.sm,
-    paddingRight: SPACING.lg,
-  },
+  searchPlaceholder: { fontSize: FONT_SIZES.md, color: COLORS.textLight, flex: 1 },
+  searchFilter: { padding: 4 },
+  categoriesScroll: { marginTop: SPACING.md },
+  categoriesContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
   categoryPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: 8,
-    borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.surface,
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    gap: 6,
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 14, paddingVertical: 8,
+    borderRadius: BORDER_RADIUS.xl, backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
   },
-  categoryPillActive: {
-    backgroundColor: COLORS.primary,
-    borderColor: COLORS.primary,
-  },
-  categoryLabel: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.text,
-    fontWeight: '500',
-  },
-  categoryLabelActive: {
-    color: COLORS.textInverse,
-  },
-  scrollContent: {
-    padding: SPACING.lg,
-    paddingBottom: 100,
-  },
+  categoryPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  categoryText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textLight },
+  categoryTextActive: { color: COLORS.textInverse },
+  content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md, marginTop: SPACING.sm },
+  sectionTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text },
+  seeAll: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.primary },
   eventCard: {
-    marginBottom: SPACING.md,
+    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, overflow: 'hidden',
+    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
   },
-  eventHeader: {
-    flexDirection: 'row',
-    gap: SPACING.md,
-    marginBottom: SPACING.md,
+  eventCardFirst: { marginTop: 0 },
+  eventCover: {
+    height: 100, alignItems: 'center', justifyContent: 'center',
   },
+  eventIconCircle: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  eventInfo: { padding: SPACING.md },
   eventDateBadge: {
-    width: 52,
-    height: 52,
-    borderRadius: BORDER_RADIUS.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6,
   },
-  eventDay: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: '800',
+  eventDateText: { fontSize: FONT_SIZES.xs, fontWeight: '700', color: COLORS.primary },
+  eventTimeText: { fontSize: FONT_SIZES.xs, color: COLORS.textLight },
+  eventTitle: { fontSize: FONT_SIZES.lg, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  eventDesc: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginBottom: 8, lineHeight: 18 },
+  eventMeta: { gap: 4, marginBottom: 10 },
+  eventMetaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  eventMetaText: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, flex: 1 },
+  eventActions: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  emptyEvents: {
+    alignItems: 'center', paddingVertical: SPACING.xl * 2, backgroundColor: COLORS.card,
+    borderRadius: BORDER_RADIUS.lg, borderWidth: 1, borderColor: COLORS.border,
   },
-  eventMonth: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  eventInfo: {
-    flex: 1,
-    justifyContent: 'center',
-    gap: 2,
-  },
-  eventTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.text,
-  },
-  eventMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  eventLocation: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textLight,
-  },
-  eventTime: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.primary,
-    fontWeight: '500',
-  },
-  eventDescription: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    lineHeight: 20,
-    marginBottom: SPACING.md,
-  },
-  eventFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  eventMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  attendeeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  attendeeCount: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textLight,
-  },
+  emptyTitle: { fontSize: FONT_SIZES.md, fontWeight: '700', color: COLORS.text, marginTop: SPACING.md },
+  emptyDesc: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginTop: 4 },
 });

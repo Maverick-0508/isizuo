@@ -1,42 +1,29 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  Dimensions,
-} from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
-import { useAuthStore } from '@/stores';
+import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
+import { useAuthStore } from '@/stores';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
 import { Button } from '@/components/ui';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
+  const { sendOTP } = useAuthStore();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { signIn } = useAuthStore();
-  const { t } = useTranslation();
 
-  const handleSendOtp = async () => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email || !emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
-      return;
-    }
+  const handleSendOTP = async () => {
+    if (!email.trim()) return;
     setIsLoading(true);
     try {
-      await signIn(email);
-      router.replace('/(tabs)');
+      await sendOTP(email.trim());
+      router.push('/(auth)/verify');
     } catch (error) {
-      Alert.alert('Error', 'Failed to sign in. Please try again.');
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }
@@ -44,248 +31,136 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.bgDecor}>
-        <View style={styles.circle1} />
-        <View style={styles.circle2} />
+      <View style={styles.gradientBg}>
+        <View style={[styles.blob, styles.blob1]} />
+        <View style={[styles.blob, styles.blob2]} />
+        <View style={[styles.blob, styles.blob3]} />
       </View>
 
-      <KeyboardAvoidingView
-        style={styles.keyboardView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.content}>
-          <View style={styles.header}>
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <View style={styles.heroSection}>
             <View style={styles.logoContainer}>
-              <Ionicons name="heart" size={36} color={COLORS.textInverse} />
+              <Ionicons name="heart" size={32} color={COLORS.textInverse} />
             </View>
-            <Text style={styles.title}>{t('app_name')}</Text>
-            <Text style={styles.tagline}>{t('tagline')}</Text>
+            <Text style={styles.heroTitle}>Isizuo</Text>
+            <Text style={styles.heroSubtitle}>Where meaningful connections begin</Text>
           </View>
 
-          <View style={styles.form}>
+          <View style={styles.featuresRow}>
+            <View style={styles.featureItem}>
+              <View style={styles.featureIcon}>
+                <Ionicons name="shield-checkmark" size={20} color={COLORS.safe} />
+              </View>
+              <Text style={styles.featureText}>Safe</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureIcon}>
+                <Ionicons name="people" size={20} color={COLORS.info} />
+              </View>
+              <Text style={styles.featureText}>Community</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <View style={styles.featureIcon}>
+                <Ionicons name="heart" size={20} color={COLORS.primary} />
+              </View>
+              <Text style={styles.featureText}>Authentic</Text>
+            </View>
+          </View>
+
+          <View style={styles.formCard}>
+            <Text style={styles.formTitle}>Get started</Text>
+            <Text style={styles.formDesc}>Enter your email to receive a verification code</Text>
+
             <View style={styles.inputContainer}>
-              <Ionicons name="mail-outline" size={20} color={COLORS.textLight} style={styles.inputIcon} />
+              <Ionicons name="mail-outline" size={20} color={COLORS.textLight} />
               <TextInput
-                style={styles.emailInput}
-                value={email}
-                onChangeText={setEmail}
+                style={styles.input}
                 placeholder="Enter your email"
                 placeholderTextColor={COLORS.textLight}
+                value={email}
+                onChangeText={setEmail}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
               />
-              {email.length > 0 && (
-                <TouchableOpacity onPress={() => setEmail('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                  <Ionicons name="close-circle" size={18} color={COLORS.textLight} />
-                </TouchableOpacity>
-              )}
             </View>
 
             <Button
-              title={t('send_otp')}
-              onPress={handleSendOtp}
-              isLoading={isLoading}
-              disabled={!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)}
+              title="Continue"
+              onPress={handleSendOTP}
+              variant="gradient"
               size="lg"
+              fullWidth
+              isLoading={isLoading}
+              disabled={!email.trim()}
+              icon="arrow-forward"
             />
-          </View>
 
-          <View style={styles.divider}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>or</Text>
-            <View style={styles.dividerLine} />
-          </View>
-
-          <TouchableOpacity
-            style={styles.ussdButton}
-            onPress={() => router.push('/ussd')}
-            activeOpacity={0.7}
-          >
-            <Ionicons name="keypad-outline" size={18} color={COLORS.textInverse} />
-            <Text style={styles.ussdText}>{t('ussd_mode')}</Text>
-          </TouchableOpacity>
-
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Ionicons name="shield-checkmark-outline" size={16} color={COLORS.textInverse} />
-              </View>
-              <Text style={styles.featureText}>Safe & Verified</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Ionicons name="people-outline" size={16} color={COLORS.textInverse} />
-              </View>
-              <Text style={styles.featureText}>Family Endorsed</Text>
-            </View>
-            <View style={styles.featureItem}>
-              <View style={styles.featureIcon}>
-                <Ionicons name="globe-outline" size={16} color={COLORS.textInverse} />
-              </View>
-              <Text style={styles.featureText}>Multi-Language</Text>
-            </View>
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              By continuing, you agree to our Terms of Service and Privacy Policy
+            <Text style={styles.terms}>
+              By continuing, you agree to our{' '}
+              <Text style={styles.termsLink}>Terms of Service</Text>
+              {' '}and{' '}
+              <Text style={styles.termsLink}>Privacy Policy</Text>
             </Text>
           </View>
-        </View>
+
+          <TouchableOpacity style={styles.usdBtn}>
+            <Ionicons name="chatbubble-ellipses-outline" size={18} color={COLORS.primary} />
+            <Text style={styles.usdText}>USSD (Coming Soon)</Text>
+          </TouchableOpacity>
+        </ScrollView>
       </KeyboardAvoidingView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.primary,
+  container: { flex: 1, backgroundColor: COLORS.background },
+  gradientBg: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.6,
+    backgroundColor: COLORS.primary, overflow: 'hidden',
   },
-  bgDecor: {
-    ...StyleSheet.absoluteFillObject,
-    overflow: 'hidden',
-  },
-  circle1: {
-    position: 'absolute',
-    width: 300,
-    height: 300,
-    borderRadius: 150,
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    top: -80,
-    right: -80,
-  },
-  circle2: {
-    position: 'absolute',
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    bottom: 100,
-    left: -60,
-  },
-  keyboardView: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: SPACING.xl,
-    justifyContent: 'center',
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: SPACING.xxl,
-  },
+  blob: { position: 'absolute', borderRadius: 999, opacity: 0.15 },
+  blob1: { width: 300, height: 300, top: -80, right: -60, backgroundColor: COLORS.secondary },
+  blob2: { width: 200, height: 200, top: 100, left: -40, backgroundColor: COLORS.accent },
+  blob3: { width: 250, height: 250, top: 200, right: -30, backgroundColor: '#FF6B6B' },
+  keyboardView: { flex: 1 },
+  scrollContent: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xl },
+  heroSection: { alignItems: 'center', marginBottom: SPACING.xl },
   logoContainer: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.18)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: SPACING.lg,
+    width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md,
   },
-  title: {
-    fontSize: FONT_SIZES.hero,
-    fontWeight: '800',
-    color: COLORS.textInverse,
-    marginBottom: SPACING.sm,
-    letterSpacing: 0.5,
+  heroTitle: { fontSize: 42, fontWeight: '900', color: COLORS.textInverse, letterSpacing: -1 },
+  heroSubtitle: { fontSize: FONT_SIZES.lg, color: 'rgba(255,255,255,0.8)', marginTop: SPACING.xs },
+  featuresRow: {
+    flexDirection: 'row', justifyContent: 'center', gap: SPACING.xl, marginBottom: SPACING.xl,
   },
-  tagline: {
-    fontSize: FONT_SIZES.lg,
-    color: COLORS.textInverse,
-    opacity: 0.85,
-    fontWeight: '400',
-  },
-  form: {
-    backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.xl,
-    padding: SPACING.lg,
-    marginBottom: SPACING.lg,
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: COLORS.border,
-    borderRadius: BORDER_RADIUS.md,
-    marginBottom: SPACING.lg,
-    paddingHorizontal: SPACING.md,
-    backgroundColor: COLORS.surface,
-  },
-  inputIcon: {
-    marginRight: SPACING.sm,
-  },
-  emailInput: {
-    flex: 1,
-    paddingVertical: 14,
-    fontSize: FONT_SIZES.lg,
-    color: COLORS.text,
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: SPACING.lg,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-  },
-  dividerText: {
-    color: COLORS.textInverse,
-    opacity: 0.7,
-    marginHorizontal: SPACING.md,
-    fontSize: FONT_SIZES.sm,
-  },
-  ussdButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: SPACING.sm,
-    padding: SPACING.md,
-    borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.3)',
-    marginBottom: SPACING.xl,
-  },
-  ussdText: {
-    color: COLORS.textInverse,
-    fontSize: FONT_SIZES.md,
-    fontWeight: '500',
-  },
-  features: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: SPACING.xl,
-  },
-  featureItem: {
-    alignItems: 'center',
-    gap: 6,
-  },
+  featureItem: { alignItems: 'center', gap: 6 },
   featureIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)',
+    alignItems: 'center', justifyContent: 'center',
   },
-  featureText: {
-    color: COLORS.textInverse,
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '500',
-    opacity: 0.9,
+  featureText: { fontSize: FONT_SIZES.xs, fontWeight: '600', color: COLORS.textInverse },
+  formCard: {
+    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg,
+    marginBottom: SPACING.md, ...SHADOWS.lg,
   },
-  footer: {
-    alignItems: 'center',
+  formTitle: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.text, marginBottom: 4 },
+  formDesc: { fontSize: FONT_SIZES.md, color: COLORS.textLight, marginBottom: SPACING.lg, lineHeight: 20 },
+  inputContainer: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background,
+    borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING.md, paddingVertical: 14,
+    marginBottom: SPACING.md, gap: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
   },
-  footerText: {
-    color: COLORS.textInverse,
-    fontSize: FONT_SIZES.xs,
-    opacity: 0.6,
-    textAlign: 'center',
+  input: { flex: 1, fontSize: FONT_SIZES.md, color: COLORS.text },
+  terms: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, textAlign: 'center', marginTop: SPACING.md, lineHeight: 18 },
+  termsLink: { color: COLORS.primary, fontWeight: '600' },
+  usdBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
+    paddingVertical: 12, backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 1, borderColor: COLORS.border,
   },
+  usdText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.primary },
 });

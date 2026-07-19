@@ -1,300 +1,159 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  Switch,
-} from 'react-native';
-import { router } from 'expo-router';
+import React from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
-import { AVAILABLE_LANGUAGES } from '@/i18n';
-import { useAuthStore, useAppStore } from '@/stores';
+import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
-import { Card, Badge, Button, Avatar } from '@/components/ui';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
+import { Badge, Avatar, Button } from '@/components/ui';
+import { useAuthStore } from '@/stores';
 
 export default function ProfileScreen() {
+  const { t, locale, setLocale } = useTranslation();
+  const router = useRouter();
   const { user, signOut } = useAuthStore();
-  const { language, setLanguage, isLowDataMode, toggleLowDataMode } = useAppStore();
-  const { t } = useTranslation();
-  const [showLanguagePicker, setShowLanguagePicker] = useState(false);
 
-  const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
+  const handleSignOut = () => {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: signOut },
+      { text: 'Sign Out', style: 'destructive', onPress: async () => { await signOut(); router.replace('/(auth)'); } },
     ]);
   };
 
   const menuItems = [
-    {
-      section: 'Account',
-      items: [
-        { icon: 'person-outline' as const, label: 'Edit Profile', onPress: () => router.push('/profile/edit') },
-        { icon: 'camera-outline' as const, label: 'Photo Verification', onPress: () => router.push('/safety'), badge: user?.isPhotoVerified ? 'Verified' : 'Pending' },
-        { icon: 'shield-checkmark-outline' as const, label: 'Safety Center', onPress: () => router.push('/safety') },
-        { icon: 'people-outline' as const, label: 'Family Endorsement', onPress: () => router.push('/family') },
-      ],
-    },
-    {
-      section: 'Premium',
-      items: [
-        { icon: 'rocket-outline' as const, label: 'Boost Profile', onPress: () => {} },
-        { icon: 'gift-outline' as const, label: 'Send Gift', onPress: () => {} },
-        { icon: 'diamond-outline' as const, label: 'Subscription Plans', onPress: () => {} },
-        { icon: 'wallet-outline' as const, label: 'My Credits', onPress: () => {}, rightText: `${user?.credits || 0}` },
-      ],
-    },
-    {
-      section: 'Safety',
-      items: [
-        { icon: 'location-outline' as const, label: 'Location Sharing', onPress: () => {} },
-        { icon: 'alert-circle-outline' as const, label: 'Emergency Contacts', onPress: () => router.push('/safety') },
-        { icon: 'ban-outline' as const, label: 'Blocked Users', onPress: () => {} },
-        { icon: 'document-text-outline' as const, label: 'My Reports', onPress: () => {} },
-      ],
-    },
-    {
-      section: 'Settings',
-      items: [
-        { icon: 'language-outline' as const, label: 'Language', onPress: () => setShowLanguagePicker(!showLanguagePicker), rightText: AVAILABLE_LANGUAGES.find((l) => l.code === language)?.nativeName },
-        { icon: 'phone-portrait-outline' as const, label: 'Low Data Mode', onPress: toggleLowDataMode, isSwitch: true, switchValue: isLowDataMode },
-        { icon: 'notifications-outline' as const, label: 'Notifications', onPress: () => {} },
-        { icon: 'lock-closed-outline' as const, label: 'Privacy', onPress: () => {} },
-      ],
-    },
-    {
-      section: 'Developer',
-      items: [
-        { icon: 'keypad-outline' as const, label: 'USSD Mode', onPress: () => router.push('/ussd') },
-        { icon: 'extension-puzzle-outline' as const, label: 'Embedded SDK', onPress: () => {} },
-      ],
-    },
+    { icon: 'person-outline', label: t('edit_profile'), route: '/(auth)/onboarding' },
+    { icon: 'shield-outline', label: t('safety_settings'), route: '/(auth)/safety' },
+    { icon: 'notifications-outline', label: t('notifications'), route: '' },
+    { icon: 'language-outline', label: t('language'), route: '' },
+    { icon: 'help-circle-outline', label: t('help'), route: '/(auth)/help' },
+    { icon: 'document-text-outline', label: t('legal'), route: '/(auth)/legal' },
+    { icon: 'diamond-outline', label: t('subscription'), route: '/(auth)/subscription' },
   ];
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+    <View style={styles.container}>
       <View style={styles.header}>
-        <Avatar size={72} isVerified={user?.isVerified} name={user?.name || 'User'} colorIndex={0} />
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user?.name || 'Isizuo User'}</Text>
-          <Text style={styles.userEmail}>{user?.email || 'user@isizuo.com'}</Text>
-          <View style={styles.badgeRow}>
-            {user?.isVerified && <Badge label="Verified" variant="verified" size="sm" icon="checkmark-circle" />}
-            {user?.kycLevel && user.kycLevel !== 'none' && (
-              <Badge label={`KYC: ${user.kycLevel.toUpperCase()}`} variant="info" size="sm" />
-            )}
-            <Badge label={`Safety: ${user?.safetyScore || 50}%`} variant="success" size="sm" icon="shield-checkmark" />
-          </View>
-        </View>
+        <Text style={styles.headerTitle}>{t('settings')}</Text>
       </View>
 
-      {showLanguagePicker && (
-        <Card style={styles.languageCard}>
-          <View style={styles.languageHeader}>
-            <Ionicons name="language-outline" size={18} color={COLORS.text} />
-            <Text style={styles.languageTitle}>{t('language_setting')}</Text>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.profileCard}>
+          <View style={styles.avatarContainer}>
+            <Avatar name={user?.full_name || 'User'} size={80} isVerified={true} colorIndex={0} />
           </View>
-          {AVAILABLE_LANGUAGES.map((lang) => (
-            <TouchableOpacity
-              key={lang.code}
-              style={[styles.languageOption, language === lang.code && styles.languageOptionActive]}
-              onPress={() => {
-                setLanguage(lang.code);
-                setShowLanguagePicker(false);
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={[styles.languageText, language === lang.code && styles.languageTextActive]}>
-                {lang.nativeName} ({lang.name})
-              </Text>
-              {language === lang.code && <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />}
+          <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'user@email.com'}</Text>
+          <View style={styles.badgeRow}>
+            <Badge label="Verified" variant="info" icon="checkmark-circle" />
+            <Badge label="Gold" variant="premium" icon="diamond" />
+          </View>
+          <Button title={t('edit_profile')} variant="outline" size="sm" icon="create-outline" fullWidth />
+        </View>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statLabel}>{t('matches')}</Text>
+          </View>
+          <View style={[styles.statItem, styles.statBorder]}>
+            <Text style={styles.statValue}>48</Text>
+            <Text style={styles.statLabel}>{t('likes')}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statValue}>23</Text>
+            <Text style={styles.statLabel}>{t('profile_views')}</Text>
+          </View>
+        </View>
+
+        <View style={styles.menuSection}>
+          {menuItems.map((item, index) => (
+            <TouchableOpacity key={item.label} style={styles.menuItem} activeOpacity={0.7}>
+              <View style={styles.menuIcon}>
+                <Ionicons name={item.icon as any} size={20} color={COLORS.primary} />
+              </View>
+              <Text style={styles.menuLabel}>{item.label}</Text>
+              <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
             </TouchableOpacity>
           ))}
-        </Card>
-      )}
+        </View>
 
-      {menuItems.map((section) => (
-        <View key={section.section} style={styles.section}>
-          <Text style={styles.sectionTitle}>{section.section}</Text>
-          <Card style={styles.menuCard}>
-            {section.items.map((item, index) => (
+        <View style={styles.languageSection}>
+          <Text style={styles.languageTitle}>{t('language')}</Text>
+          <View style={styles.languageGrid}>
+            {['en', 'sw', 'am', 'yo', 'ig', 'ha', 'zu', 'fr'].map((lang) => (
               <TouchableOpacity
-                key={item.label}
-                style={[styles.menuItem, index < section.items.length - 1 && styles.menuItemBorder]}
-                onPress={item.onPress}
-                activeOpacity={0.7}
+                key={lang}
+                style={[styles.langPill, locale === lang && styles.langPillActive]}
+                onPress={() => setLocale(lang as any)}
               >
-                <View style={styles.menuIconContainer}>
-                  <Ionicons name={item.icon} size={20} color={COLORS.textLight} />
-                </View>
-                <Text style={styles.menuLabel}>{item.label}</Text>
-                <View style={styles.menuRight}>
-                  {item.isSwitch ? (
-                    <Switch
-                      value={item.switchValue}
-                      onValueChange={item.onPress}
-                      trackColor={{ false: COLORS.border, true: COLORS.primaryLight }}
-                      thumbColor={item.switchValue ? COLORS.primary : COLORS.textLight}
-                    />
-                  ) : (
-                    <>
-                      {item.rightText && <Text style={styles.menuRightText}>{item.rightText}</Text>}
-                      {item.badge && <Badge label={item.badge} variant={item.badge === 'Verified' ? 'verified' : 'warning'} size="sm" />}
-                      <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
-                    </>
-                  )}
-                </View>
+                <Text style={[styles.langPillText, locale === lang && styles.langPillTextActive]}>
+                  {lang.toUpperCase()}
+                </Text>
               </TouchableOpacity>
             ))}
-          </Card>
+          </View>
         </View>
-      ))}
 
-      <View style={styles.footer}>
-        <Button title="Logout" onPress={handleLogout} variant="danger" size="lg" icon="log-out-outline" />
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+          <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
+          <Text style={styles.signOutText}>{t('sign_out')}</Text>
+        </TouchableOpacity>
+
         <Text style={styles.version}>Isizuo v1.0.0</Text>
-        <Text style={styles.copyright}>Made with love in Africa</Text>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.background,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.md,
-    paddingHorizontal: SPACING.lg,
-    paddingTop: SPACING.xxl + SPACING.md,
-    paddingBottom: SPACING.lg,
-    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.lg, paddingTop: 60, paddingBottom: SPACING.sm,
+    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.sm,
   },
-  userInfo: {
-    flex: 1,
+  headerTitle: { fontSize: FONT_SIZES.title, fontWeight: '900', color: COLORS.primary, letterSpacing: -1 },
+  content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
+  profileCard: {
+    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, padding: SPACING.lg,
+    alignItems: 'center', marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
   },
-  userName: {
-    fontSize: FONT_SIZES.xl,
-    fontWeight: '700',
-    color: COLORS.textInverse,
+  avatarContainer: { marginBottom: SPACING.md },
+  userName: { fontSize: FONT_SIZES.xl, fontWeight: '800', color: COLORS.text, marginBottom: 2 },
+  userEmail: { fontSize: FONT_SIZES.sm, color: COLORS.textLight, marginBottom: SPACING.md },
+  badgeRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
+  statsRow: {
+    flexDirection: 'row', backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
   },
-  userEmail: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textInverse,
-    opacity: 0.8,
-    marginBottom: SPACING.xs,
-  },
-  badgeRow: {
-    flexDirection: 'row',
-    gap: SPACING.xs,
-    flexWrap: 'wrap',
-  },
-  languageCard: {
-    marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md,
-    marginBottom: SPACING.sm,
-  },
-  languageHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-    marginBottom: SPACING.md,
-  },
-  languageTitle: {
-    fontSize: FONT_SIZES.md,
-    fontWeight: '600',
-    color: COLORS.text,
-  },
-  languageOption: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: SPACING.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
-  },
-  languageOptionActive: {
-    borderBottomColor: COLORS.primary,
-  },
-  languageText: {
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-  },
-  languageTextActive: {
-    color: COLORS.primary,
-    fontWeight: '600',
-  },
-  section: {
-    paddingHorizontal: SPACING.lg,
-    marginTop: SPACING.lg,
-  },
-  sectionTitle: {
-    fontSize: FONT_SIZES.xs,
-    fontWeight: '700',
-    color: COLORS.textLight,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    marginBottom: SPACING.sm,
-  },
-  menuCard: {
-    padding: 0,
+  statItem: { flex: 1, alignItems: 'center' },
+  statBorder: { borderLeftWidth: 1, borderRightWidth: 1, borderColor: COLORS.border },
+  statValue: { fontSize: FONT_SIZES.xxl, fontWeight: '800', color: COLORS.primary },
+  statLabel: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, marginTop: 2 },
+  menuSection: {
+    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, marginBottom: SPACING.md,
+    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden',
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: SPACING.md,
+    borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.border,
+  menuIcon: { width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary + '12', alignItems: 'center', justifyContent: 'center' },
+  menuLabel: { flex: 1, fontSize: FONT_SIZES.md, fontWeight: '600', color: COLORS.text, marginLeft: SPACING.sm },
+  languageSection: { marginBottom: SPACING.md },
+  languageTitle: { fontSize: FONT_SIZES.lg, fontWeight: '700', color: COLORS.text, marginBottom: SPACING.sm },
+  languageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  langPill: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: BORDER_RADIUS.xl,
+    backgroundColor: COLORS.card, borderWidth: 1, borderColor: COLORS.border,
   },
-  menuIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: COLORS.surfaceDark,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: SPACING.md,
+  langPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  langPillText: { fontSize: FONT_SIZES.sm, fontWeight: '600', color: COLORS.textLight },
+  langPillTextActive: { color: COLORS.textInverse },
+  signOutBtn: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
+    paddingVertical: 14, backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
+    marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
   },
-  menuLabel: {
-    flex: 1,
-    fontSize: FONT_SIZES.md,
-    color: COLORS.text,
-    fontWeight: '500',
-  },
-  menuRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: SPACING.sm,
-  },
-  menuRightText: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textLight,
-  },
-  footer: {
-    paddingHorizontal: SPACING.lg,
-    paddingVertical: SPACING.xl,
-    paddingBottom: 120,
-    alignItems: 'center',
-  },
-  version: {
-    fontSize: FONT_SIZES.sm,
-    color: COLORS.textLight,
-    marginTop: SPACING.md,
-  },
-  copyright: {
-    fontSize: FONT_SIZES.xs,
-    color: COLORS.textLight,
-    marginTop: 4,
-    opacity: 0.7,
-  },
+  signOutText: { fontSize: FONT_SIZES.md, fontWeight: '600', color: COLORS.danger },
+  version: { fontSize: FONT_SIZES.xs, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.xl },
 });
