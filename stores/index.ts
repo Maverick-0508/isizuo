@@ -27,8 +27,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (email: string) => {
     try {
-      const success = await sendOTP(email);
-      if (!success) throw new Error('Failed to send OTP');
+      const result = await sendOTP(email);
+      if (!result?.session) throw new Error('Failed to send OTP');
+      await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
+      set({
+        session: result.session,
+        user: result.session.user as unknown as User,
+        isAuthenticated: true,
+      });
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;

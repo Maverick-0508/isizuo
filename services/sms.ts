@@ -18,7 +18,7 @@ export async function sendSMS(phone: string, message: string): Promise<boolean> 
   }
 }
 
-export async function sendOTP(email: string): Promise<boolean> {
+export async function sendOTP(email: string): Promise<{ session: any; user: any } | null> {
   try {
     const res = await fetch(`${EDGE_FUNCTION_BASE}/send-otp`, {
       method: 'POST',
@@ -30,10 +30,10 @@ export async function sendOTP(email: string): Promise<boolean> {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
-    return true;
+    return { session: data.session, user: data.user };
   } catch (error) {
     console.error('[OTP] Send error:', error);
-    return false;
+    return null;
   }
 }
 

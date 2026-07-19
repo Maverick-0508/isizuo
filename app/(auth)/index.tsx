@@ -30,7 +30,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await signIn(email);
-      router.push({ pathname: '/(auth)/verify', params: { email } });
+      router.replace('/(tabs)');
     } catch (error) {
       Alert.alert('Error', 'Failed to send verification code. Please try again.');
     } finally {
