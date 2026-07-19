@@ -9,7 +9,9 @@ import {
   Switch,
 } from 'react-native';
 import { router } from 'expo-router';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, AVAILABLE_LANGUAGES } from '@/constants';
+import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
+import { AVAILABLE_LANGUAGES } from '@/i18n';
 import { useAuthStore, useAppStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Card, Badge, Button, Avatar } from '@/components/ui';
@@ -31,44 +33,44 @@ export default function ProfileScreen() {
     {
       section: 'Account',
       items: [
-        { icon: '👤', label: 'Edit Profile', onPress: () => router.push('/profile/edit') },
-        { icon: '📷', label: 'Photo Verification', onPress: () => router.push('/safety'), badge: user?.isPhotoVerified ? 'Verified' : 'Pending' },
-        { icon: '🛡️', label: 'Safety Center', onPress: () => router.push('/safety') },
-        { icon: '👨‍👩‍👧', label: 'Family Endorsement', onPress: () => router.push('/family') },
+        { icon: 'person-outline' as const, label: 'Edit Profile', onPress: () => router.push('/profile/edit') },
+        { icon: 'camera-outline' as const, label: 'Photo Verification', onPress: () => router.push('/safety'), badge: user?.isPhotoVerified ? 'Verified' : 'Pending' },
+        { icon: 'shield-checkmark-outline' as const, label: 'Safety Center', onPress: () => router.push('/safety') },
+        { icon: 'people-outline' as const, label: 'Family Endorsement', onPress: () => router.push('/family') },
       ],
     },
     {
       section: 'Premium',
       items: [
-        { icon: '🚀', label: 'Boost Profile', onPress: () => {} },
-        { icon: '🎁', label: 'Send Gift', onPress: () => {} },
-        { icon: '💎', label: 'Subscription Plans', onPress: () => {} },
-        { icon: '💰', label: 'My Credits', onPress: () => {}, rightText: `${user?.credits || 0}` },
+        { icon: 'rocket-outline' as const, label: 'Boost Profile', onPress: () => {} },
+        { icon: 'gift-outline' as const, label: 'Send Gift', onPress: () => {} },
+        { icon: 'diamond-outline' as const, label: 'Subscription Plans', onPress: () => {} },
+        { icon: 'wallet-outline' as const, label: 'My Credits', onPress: () => {}, rightText: `${user?.credits || 0}` },
       ],
     },
     {
       section: 'Safety',
       items: [
-        { icon: '📍', label: 'Location Sharing', onPress: () => {} },
-        { icon: '🚨', label: 'Emergency Contacts', onPress: () => router.push('/safety') },
-        { icon: '🚫', label: 'Blocked Users', onPress: () => {} },
-        { icon: '📋', label: 'My Reports', onPress: () => {} },
+        { icon: 'location-outline' as const, label: 'Location Sharing', onPress: () => {} },
+        { icon: 'alert-circle-outline' as const, label: 'Emergency Contacts', onPress: () => router.push('/safety') },
+        { icon: 'ban-outline' as const, label: 'Blocked Users', onPress: () => {} },
+        { icon: 'document-text-outline' as const, label: 'My Reports', onPress: () => {} },
       ],
     },
     {
       section: 'Settings',
       items: [
-        { icon: '🌐', label: 'Language', onPress: () => setShowLanguagePicker(!showLanguagePicker), rightText: AVAILABLE_LANGUAGES.find((l) => l.code === language)?.nativeName },
-        { icon: '📱', label: 'Low Data Mode', onPress: toggleLowDataMode, isSwitch: true, switchValue: isLowDataMode },
-        { icon: '🔔', label: 'Notifications', onPress: () => {} },
-        { icon: '🔒', label: 'Privacy', onPress: () => {} },
+        { icon: 'language-outline' as const, label: 'Language', onPress: () => setShowLanguagePicker(!showLanguagePicker), rightText: AVAILABLE_LANGUAGES.find((l) => l.code === language)?.nativeName },
+        { icon: 'phone-portrait-outline' as const, label: 'Low Data Mode', onPress: toggleLowDataMode, isSwitch: true, switchValue: isLowDataMode },
+        { icon: 'notifications-outline' as const, label: 'Notifications', onPress: () => {} },
+        { icon: 'lock-closed-outline' as const, label: 'Privacy', onPress: () => {} },
       ],
     },
     {
       section: 'Developer',
       items: [
-        { icon: '📱', label: 'USSD Mode', onPress: () => router.push('/ussd') },
-        { icon: '🔌', label: 'Embedded SDK', onPress: () => {} },
+        { icon: 'keypad-outline' as const, label: 'USSD Mode', onPress: () => router.push('/ussd') },
+        { icon: 'extension-puzzle-outline' as const, label: 'Embedded SDK', onPress: () => {} },
       ],
     },
   ];
@@ -76,23 +78,26 @@ export default function ProfileScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       <View style={styles.header}>
-        <Avatar size={80} isVerified={user?.isVerified} />
+        <Avatar size={72} isVerified={user?.isVerified} name={user?.name || 'User'} colorIndex={0} />
         <View style={styles.userInfo}>
-          <Text style={styles.userName}>{user?.name || 'User'}</Text>
-          <Text style={styles.userPhone}>{user?.phone || '+254 XXX XXX XXX'}</Text>
+          <Text style={styles.userName}>{user?.name || 'Isizuo User'}</Text>
+          <Text style={styles.userEmail}>{user?.email || 'user@isizuo.com'}</Text>
           <View style={styles.badgeRow}>
-            {user?.isVerified && <Badge label="✓ Verified" variant="verified" size="sm" />}
+            {user?.isVerified && <Badge label="Verified" variant="verified" size="sm" icon="checkmark-circle" />}
             {user?.kycLevel && user.kycLevel !== 'none' && (
               <Badge label={`KYC: ${user.kycLevel.toUpperCase()}`} variant="info" size="sm" />
             )}
-            <Badge label={`Safety: ${user?.safetyScore || 50}%`} variant="success" size="sm" />
+            <Badge label={`Safety: ${user?.safetyScore || 50}%`} variant="success" size="sm" icon="shield-checkmark" />
           </View>
         </View>
       </View>
 
       {showLanguagePicker && (
         <Card style={styles.languageCard}>
-          <Text style={styles.languageTitle}>{t('language_setting')}</Text>
+          <View style={styles.languageHeader}>
+            <Ionicons name="language-outline" size={18} color={COLORS.text} />
+            <Text style={styles.languageTitle}>{t('language_setting')}</Text>
+          </View>
           {AVAILABLE_LANGUAGES.map((lang) => (
             <TouchableOpacity
               key={lang.code}
@@ -101,11 +106,12 @@ export default function ProfileScreen() {
                 setLanguage(lang.code);
                 setShowLanguagePicker(false);
               }}
+              activeOpacity={0.7}
             >
               <Text style={[styles.languageText, language === lang.code && styles.languageTextActive]}>
                 {lang.nativeName} ({lang.name})
               </Text>
-              {language === lang.code && <Text style={styles.checkmark}>✓</Text>}
+              {language === lang.code && <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />}
             </TouchableOpacity>
           ))}
         </Card>
@@ -120,8 +126,11 @@ export default function ProfileScreen() {
                 key={item.label}
                 style={[styles.menuItem, index < section.items.length - 1 && styles.menuItemBorder]}
                 onPress={item.onPress}
+                activeOpacity={0.7}
               >
-                <Text style={styles.menuIcon}>{item.icon}</Text>
+                <View style={styles.menuIconContainer}>
+                  <Ionicons name={item.icon} size={20} color={COLORS.textLight} />
+                </View>
                 <Text style={styles.menuLabel}>{item.label}</Text>
                 <View style={styles.menuRight}>
                   {item.isSwitch ? (
@@ -134,8 +143,8 @@ export default function ProfileScreen() {
                   ) : (
                     <>
                       {item.rightText && <Text style={styles.menuRightText}>{item.rightText}</Text>}
-                      {item.badge && <Badge label={item.badge} variant="info" size="sm" />}
-                      <Text style={styles.menuArrow}>›</Text>
+                      {item.badge && <Badge label={item.badge} variant={item.badge === 'Verified' ? 'verified' : 'warning'} size="sm" />}
+                      <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
                     </>
                   )}
                 </View>
@@ -146,8 +155,9 @@ export default function ProfileScreen() {
       ))}
 
       <View style={styles.footer}>
-        <Button title="Logout" onPress={handleLogout} variant="danger" />
+        <Button title="Logout" onPress={handleLogout} variant="danger" size="lg" icon="log-out-outline" />
         <Text style={styles.version}>Isizuo v1.0.0</Text>
+        <Text style={styles.copyright}>Made with love in Africa</Text>
       </View>
     </ScrollView>
   );
@@ -175,8 +185,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: COLORS.textInverse,
   },
-  userPhone: {
-    fontSize: FONT_SIZES.md,
+  userEmail: {
+    fontSize: FONT_SIZES.sm,
     color: COLORS.textInverse,
     opacity: 0.8,
     marginBottom: SPACING.xs,
@@ -191,11 +201,16 @@ const styles = StyleSheet.create({
     marginTop: SPACING.md,
     marginBottom: SPACING.sm,
   },
+  languageHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: SPACING.sm,
+    marginBottom: SPACING.md,
+  },
   languageTitle: {
     fontSize: FONT_SIZES.md,
     fontWeight: '600',
     color: COLORS.text,
-    marginBottom: SPACING.md,
   },
   languageOption: {
     flexDirection: 'row',
@@ -216,20 +231,16 @@ const styles = StyleSheet.create({
     color: COLORS.primary,
     fontWeight: '600',
   },
-  checkmark: {
-    color: COLORS.primary,
-    fontWeight: '700',
-  },
   section: {
     paddingHorizontal: SPACING.lg,
     marginTop: SPACING.lg,
   },
   sectionTitle: {
-    fontSize: FONT_SIZES.sm,
-    fontWeight: '600',
+    fontSize: FONT_SIZES.xs,
+    fontWeight: '700',
     color: COLORS.textLight,
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     marginBottom: SPACING.sm,
   },
   menuCard: {
@@ -245,15 +256,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.border,
   },
-  menuIcon: {
-    fontSize: 20,
+  menuIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: COLORS.surfaceDark,
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: SPACING.md,
-    width: 28,
   },
   menuLabel: {
     flex: 1,
     fontSize: FONT_SIZES.md,
     color: COLORS.text,
+    fontWeight: '500',
   },
   menuRight: {
     flexDirection: 'row',
@@ -264,19 +280,21 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.sm,
     color: COLORS.textLight,
   },
-  menuArrow: {
-    fontSize: FONT_SIZES.xl,
-    color: COLORS.textLight,
-  },
   footer: {
     paddingHorizontal: SPACING.lg,
     paddingVertical: SPACING.xl,
-    paddingBottom: 100,
+    paddingBottom: 120,
     alignItems: 'center',
   },
   version: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.textLight,
     marginTop: SPACING.md,
+  },
+  copyright: {
+    fontSize: FONT_SIZES.xs,
+    color: COLORS.textLight,
+    marginTop: 4,
+    opacity: 0.7,
   },
 });

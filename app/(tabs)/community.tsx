@@ -7,10 +7,19 @@ import {
   StyleSheet,
   RefreshControl,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 import { useCommunityStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Card, Badge, Button, Avatar, EmptyState } from '@/components/ui';
+
+const SAMPLE_COMMUNITIES = [
+  { id: '1', name: 'Lagos Tech Hub', description: 'Connecting developers, designers, and tech entrepreneurs across West Africa.', category: 'professional', members: ['1', '2', '3'], isPublic: true, languages: ['en'] },
+  { id: '2', name: 'Nairobi Music Collective', description: 'A space for East African musicians, producers, and music lovers to collaborate.', category: 'hobby', members: ['1', '2'], isPublic: true, languages: ['en', 'sw'] },
+  { id: '3', name: 'African Writers Circle', description: 'Share your work, get feedback, and connect with writers across the continent.', category: 'cultural', members: ['1'], isPublic: true, languages: ['en', 'fr'] },
+  { id: '4', name: 'Yoruba Heritage Club', description: 'Celebrating and preserving Yoruba language, traditions, and values.', category: 'cultural', members: ['1', '2', '3', '4'], isPublic: true, languages: ['en', 'yo'] },
+  { id: '5', name: 'Healthcare Heroes Africa', description: 'Network for doctors, nurses, and healthcare workers making a difference.', category: 'professional', members: ['1', '2'], isPublic: false, languages: ['en'] },
+];
 
 export default function CommunityScreen() {
   const { communities, userCommunities, fetchCommunities, joinCommunity } = useCommunityStore();
@@ -30,17 +39,29 @@ export default function CommunityScreen() {
   };
 
   const categories = [
-    { key: 'all', label: 'All', icon: '🌍' },
-    { key: 'alumni', label: 'Alumni', icon: '🎓' },
-    { key: 'professional', label: 'Professional', icon: '💼' },
-    { key: 'hobby', label: 'Hobby', icon: '🎨' },
-    { key: 'cultural', label: 'Cultural', icon: '🎭' },
-    { key: 'cause', label: 'Cause', icon: '✊' },
+    { key: 'all', label: 'All', icon: 'globe-outline' as const },
+    { key: 'alumni', label: 'Alumni', icon: 'school-outline' as const },
+    { key: 'professional', label: 'Work', icon: 'briefcase-outline' as const },
+    { key: 'hobby', label: 'Hobby', icon: 'heart-outline' as const },
+    { key: 'cultural', label: 'Culture', icon: 'color-palette-outline' as const },
+    { key: 'cause', label: 'Cause', icon: 'megaphone-outline' as const },
   ];
 
-  const displayCommunities = selectedTab === 'discover'
-    ? communities.filter((c) => selectedCategory === 'all' || c.category === selectedCategory)
-    : communities.filter((c) => userCommunities.includes(c.id));
+  const displayCommunities = communities.length > 0
+    ? (selectedTab === 'discover'
+        ? communities.filter((c) => selectedCategory === 'all' || c.category === selectedCategory)
+        : communities.filter((c) => userCommunities.includes(c.id)))
+    : (selectedTab === 'discover'
+        ? SAMPLE_COMMUNITIES.filter((c) => selectedCategory === 'all' || c.category === selectedCategory)
+        : []);
+
+  const categoryIcons: Record<string, string> = {
+    alumni: 'school-outline',
+    professional: 'briefcase-outline',
+    hobby: 'heart-outline',
+    cultural: 'color-palette-outline',
+    cause: 'megaphone-outline',
+  };
 
   return (
     <View style={styles.container}>
@@ -52,7 +73,9 @@ export default function CommunityScreen() {
         <TouchableOpacity
           style={[styles.tab, selectedTab === 'discover' && styles.tabActive]}
           onPress={() => setSelectedTab('discover')}
+          activeOpacity={0.7}
         >
+          <Ionicons name="compass-outline" size={16} color={selectedTab === 'discover' ? COLORS.textInverse : COLORS.textLight} />
           <Text style={[styles.tabText, selectedTab === 'discover' && styles.tabTextActive]}>
             {t('community_groups')}
           </Text>
@@ -60,7 +83,9 @@ export default function CommunityScreen() {
         <TouchableOpacity
           style={[styles.tab, selectedTab === 'my' && styles.tabActive]}
           onPress={() => setSelectedTab('my')}
+          activeOpacity={0.7}
         >
+          <Ionicons name="star-outline" size={16} color={selectedTab === 'my' ? COLORS.textInverse : COLORS.textLight} />
           <Text style={[styles.tabText, selectedTab === 'my' && styles.tabTextActive]}>
             {t('my_communities')}
           </Text>
@@ -74,8 +99,9 @@ export default function CommunityScreen() {
               key={cat.key}
               style={[styles.categoryPill, selectedCategory === cat.key && styles.categoryPillActive]}
               onPress={() => setSelectedCategory(cat.key)}
+              activeOpacity={0.7}
             >
-              <Text style={styles.categoryIcon}>{cat.icon}</Text>
+              <Ionicons name={cat.icon} size={14} color={selectedCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
               <Text style={[styles.categoryLabel, selectedCategory === cat.key && styles.categoryLabelActive]}>
                 {cat.label}
               </Text>
@@ -87,67 +113,78 @@ export default function CommunityScreen() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
       >
         {displayCommunities.length === 0 ? (
           <EmptyState
-            icon="👥"
+            icon="people-outline"
             title="No communities found"
             message="Join communities to connect with like-minded people!"
             actionLabel="Explore"
             onAction={fetchCommunities}
           />
         ) : (
-          displayCommunities.map((community) => (
-            <Card key={community.id} style={styles.communityCard}>
-              <View style={styles.communityHeader}>
-                <View style={styles.communityIcon}>
-                  <Text style={styles.communityIconText}>
-                    {categories.find((c) => c.key === community.category)?.icon || '👥'}
-                  </Text>
+          displayCommunities.map((community) => {
+            const isJoined = userCommunities.includes(community.id);
+            const iconKey = community.category || 'professional';
+            return (
+              <Card key={community.id} style={styles.communityCard}>
+                <View style={styles.communityHeader}>
+                  <View style={styles.communityIcon}>
+                    <Ionicons
+                      name={(categoryIcons[iconKey] || 'people-outline') as keyof typeof Ionicons.glyphMap}
+                      size={24}
+                      color={COLORS.primary}
+                    />
+                  </View>
+                  <View style={styles.communityInfo}>
+                    <Text style={styles.communityName}>{community.name}</Text>
+                    <View style={styles.memberRow}>
+                      <Ionicons name="people-outline" size={12} color={COLORS.textLight} />
+                      <Text style={styles.communityMembers}>
+                        {community.members?.length || 0} {t('group_members')}
+                      </Text>
+                    </View>
+                  </View>
+                  {community.isPublic && <Badge label="Public" variant="success" size="sm" icon="globe-outline" />}
                 </View>
-                <View style={styles.communityInfo}>
-                  <Text style={styles.communityName}>{community.name}</Text>
-                  <Text style={styles.communityMembers}>
-                    {community.members?.length || 0} {t('group_members')}
-                  </Text>
+
+                <Text style={styles.communityDescription} numberOfLines={2}>
+                  {community.description}
+                </Text>
+
+                {community.languages && community.languages.length > 0 && (
+                  <View style={styles.languageRow}>
+                    {community.languages.map((lang) => (
+                      <Badge key={lang} label={lang.toUpperCase()} variant="info" size="sm" />
+                    ))}
+                  </View>
+                )}
+
+                <View style={styles.communityFooter}>
+                  <Button
+                    title={isJoined ? 'Joined' : t('join_community')}
+                    onPress={() => joinCommunity(community.id)}
+                    variant={isJoined ? 'success' : 'primary'}
+                    size="sm"
+                    icon={isJoined ? 'checkmark' : 'add'}
+                  />
                 </View>
-                {community.isPublic && <Badge label="Public" variant="success" size="sm" />}
-              </View>
-
-              <Text style={styles.communityDescription} numberOfLines={2}>
-                {community.description}
-              </Text>
-
-              {community.languages && community.languages.length > 0 && (
-                <View style={styles.languageRow}>
-                  {community.languages.map((lang) => (
-                    <Badge key={lang} label={lang.toUpperCase()} variant="info" size="sm" />
-                  ))}
-                </View>
-              )}
-
-              <View style={styles.communityFooter}>
-                <Button
-                  title={userCommunities.includes(community.id) ? 'Joined ✓' : t('join_community')}
-                  onPress={() => joinCommunity(community.id)}
-                  variant={userCommunities.includes(community.id) ? 'success' : 'primary'}
-                  size="sm"
-                />
-              </View>
-            </Card>
-          ))
+              </Card>
+            );
+          })
         )}
 
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Create Your Own</Text>
           <Card style={styles.createCard}>
-            <Text style={styles.createIcon}>➕</Text>
+            <View style={styles.createIconContainer}>
+              <Ionicons name="add-circle-outline" size={32} color={COLORS.primary} />
+            </View>
             <Text style={styles.createTitle}>Start a Community</Text>
             <Text style={styles.createDescription}>
               Create a space for people who share your interests, profession, or cause
             </Text>
-            <Button title="Get Started" onPress={() => {}} variant="primary" size="sm" />
+            <Button title="Get Started" onPress={() => {}} variant="outline" size="sm" icon="arrow-forward" />
           </Card>
         </View>
       </ScrollView>
@@ -170,6 +207,7 @@ const styles = StyleSheet.create({
     fontSize: FONT_SIZES.xxl,
     fontWeight: '800',
     color: COLORS.textInverse,
+    letterSpacing: 0.5,
   },
   tabRow: {
     flexDirection: 'row',
@@ -179,9 +217,12 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: SPACING.sm,
+    flexDirection: 'row',
+    paddingVertical: 10,
     borderRadius: BORDER_RADIUS.md,
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
     backgroundColor: COLORS.surface,
   },
   tabActive: {
@@ -189,7 +230,7 @@ const styles = StyleSheet.create({
   },
   tabText: {
     fontSize: FONT_SIZES.sm,
-    fontWeight: '500',
+    fontWeight: '600',
     color: COLORS.text,
   },
   tabTextActive: {
@@ -208,23 +249,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: SPACING.md,
-    paddingVertical: SPACING.sm,
+    paddingVertical: 8,
     borderRadius: BORDER_RADIUS.full,
     backgroundColor: COLORS.surface,
     borderWidth: 1,
     borderColor: COLORS.border,
-    gap: SPACING.xs,
+    gap: 6,
   },
   categoryPillActive: {
     backgroundColor: COLORS.primary,
     borderColor: COLORS.primary,
   },
-  categoryIcon: {
-    fontSize: 14,
-  },
   categoryLabel: {
     fontSize: FONT_SIZES.sm,
     color: COLORS.text,
+    fontWeight: '500',
   },
   categoryLabelActive: {
     color: COLORS.textInverse,
@@ -246,20 +285,22 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.primary + '20',
+    backgroundColor: COLORS.primary + '12',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  communityIconText: {
-    fontSize: 24,
   },
   communityInfo: {
     flex: 1,
   },
   communityName: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.text,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   communityMembers: {
     fontSize: FONT_SIZES.sm,
@@ -282,23 +323,26 @@ const styles = StyleSheet.create({
   section: {
     marginTop: SPACING.lg,
   },
-  sectionTitle: {
-    fontSize: FONT_SIZES.lg,
-    fontWeight: '700',
-    color: COLORS.text,
-    marginBottom: SPACING.md,
-  },
   createCard: {
     alignItems: 'center',
     paddingVertical: SPACING.xl,
+    borderStyle: 'dashed',
+    borderWidth: 1.5,
+    borderColor: COLORS.primary + '40',
+    backgroundColor: COLORS.primary + '05',
   },
-  createIcon: {
-    fontSize: 32,
+  createIconContainer: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: COLORS.primary + '12',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: SPACING.md,
   },
   createTitle: {
     fontSize: FONT_SIZES.lg,
-    fontWeight: '600',
+    fontWeight: '700',
     color: COLORS.text,
     marginBottom: SPACING.sm,
   },
@@ -308,5 +352,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: SPACING.md,
     paddingHorizontal: SPACING.lg,
+    lineHeight: 18,
   },
 });
