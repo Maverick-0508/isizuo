@@ -12,7 +12,7 @@ const { width, height } = Dimensions.get('window');
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { sendOTP } = useAuthStore();
+  const { signIn } = useAuthStore();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
@@ -20,8 +20,8 @@ export default function LoginScreen() {
     if (!email.trim()) return;
     setIsLoading(true);
     try {
-      await sendOTP(email.trim());
-      router.push('/(auth)/verify');
+      await signIn(email.trim());
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('Login error:', error);
     } finally {

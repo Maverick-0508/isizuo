@@ -127,7 +127,7 @@ export default function EventsScreen() {
                 ) : (
                   <Badge label="Paid" variant="info" icon="card" />
                 )}
-                <Button title="RSVP" variant="primary" size="sm" icon="checkmark" />
+                <Button title="RSVP" variant="primary" size="sm" icon="checkmark" onPress={() => {}} />
               </View>
             </View>
           </TouchableOpacity>

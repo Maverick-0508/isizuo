@@ -104,9 +104,9 @@ export default function CommunityScreen() {
             </View>
             <View style={styles.communityAction}>
               {community.isJoined ? (
-                <Button title="Joined" variant="outline" size="sm" icon="checkmark" />
+                <Button title="Joined" variant="outline" size="sm" icon="checkmark" onPress={() => {}} />
               ) : (
-                <Button title="Join" variant="primary" size="sm" icon="add" />
+                <Button title="Join" variant="primary" size="sm" icon="add" onPress={() => {}} />
               )}
             </View>
           </TouchableOpacity>

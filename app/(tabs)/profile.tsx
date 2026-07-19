@@ -5,10 +5,11 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useAppStore } from '@/stores';
 
 export default function ProfileScreen() {
-  const { t, locale, setLocale } = useTranslation();
+  const { t, locale } = useTranslation();
+  const { setLanguage } = useAppStore();
   const router = useRouter();
   const { user, signOut } = useAuthStore();
 
@@ -38,15 +39,15 @@ export default function ProfileScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
-            <Avatar name={user?.full_name || 'User'} size={80} isVerified={true} colorIndex={0} />
+            <Avatar name={user?.name || 'User'} size={80} isVerified={true} colorIndex={0} />
           </View>
-          <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
+          <Text style={styles.userName}>{user?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email || 'user@email.com'}</Text>
           <View style={styles.badgeRow}>
             <Badge label="Verified" variant="info" icon="checkmark-circle" />
             <Badge label="Gold" variant="premium" icon="diamond" />
           </View>
-          <Button title={t('edit_profile')} variant="outline" size="sm" icon="create-outline" fullWidth />
+          <Button title={t('edit_profile')} variant="outline" size="sm" icon="create-outline" onPress={() => {}} fullWidth />
         </View>
 
         <View style={styles.statsRow}>
@@ -83,7 +84,7 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 key={lang}
                 style={[styles.langPill, locale === lang && styles.langPillActive]}
-                onPress={() => setLocale(lang as any)}
+                onPress={() => setLanguage(lang as any)}
               >
                 <Text style={[styles.langPillText, locale === lang && styles.langPillTextActive]}>
                   {lang.toUpperCase()}

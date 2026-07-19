@@ -60,7 +60,7 @@ export function Badge({ label, variant = 'info', size = 'sm', icon }: BadgeProps
   return (
     <View style={[styles.badge, styles[`badge_${variant}`], styles[`badge_${size}`]]}>
       {icon && <Ionicons name={icon} size={size === 'sm' ? 10 : 12} color={COLORS[`verified`] || COLORS.info} style={{ marginRight: 3 }} />}
-      <Text style={[styles.badgeText, styles[`badgeText_${size}`]]}>{label}</Text>
+      <Text style={[styles[`badgeText_${size}`]]}>{label}</Text>
     </View>
   );
 }
