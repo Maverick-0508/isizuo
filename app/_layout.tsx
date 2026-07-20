@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
   Inter_400Regular,
@@ -15,22 +15,58 @@ import { useAuthStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
 
+const FOCUS_CSS = `
+  *:focus-visible {
+    outline: 3px solid ${COLORS.primary};
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  input:focus-visible {
+    outline: none;
+    border-color: ${COLORS.primary} !important;
+    box-shadow: 0 0 0 3px rgba(232, 67, 147, 0.2);
+  }
+  [role="button"]:focus-visible,
+  button:focus-visible {
+    outline: 3px solid ${COLORS.primary};
+    outline-offset: 2px;
+  }
+`;
+
+function injectFocusStyles() {
+  if (Platform.OS !== 'web') return;
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('isizuo-focus-styles')) return;
+  const style = document.createElement('style');
+  style.id = 'isizuo-focus-styles';
+  style.textContent = FOCUS_CSS;
+  document.head.appendChild(style);
+}
+
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
+  const hasNavigated = React.useRef(false);
 
   useEffect(() => {
     if (isLoading) return;
 
     const inAuthGroup = segments[0] === '(auth)';
+    const inTabsGroup = segments[0] === '(tabs)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)');
+      if (!hasNavigated.current || inTabsGroup) {
+        hasNavigated.current = true;
+        router.replace('/(auth)');
+      }
     } else if (isAuthenticated && inAuthGroup) {
-      router.replace('/(tabs)');
+      if (!hasNavigated.current || inAuthGroup) {
+        hasNavigated.current = true;
+        router.replace('/(tabs)');
+      }
     }
-  }, [isAuthenticated, isLoading, segments]);
+  }, [isAuthenticated, isLoading]);
 
   return <>{children}</>;
 }
@@ -49,6 +85,7 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
+    injectFocusStyles();
     const timeout = setTimeout(() => setReady(true), 2000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -89,7 +126,6 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.background },
-          animation: 'fade',
         }}
       >
         <Stack.Screen name="(auth)" />
