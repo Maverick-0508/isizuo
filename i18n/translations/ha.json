@@ -127,5 +127,19 @@
   "sdk_description": "Ƙara abubuwan haɗawa a cikin manhajar ku",
   "embed_chat": "Magana a Ciki",
   "embed_matching": "Dacewa a Ciki",
-  "embed_events": "Abubuwan da ke Faruwa a Ciki"
+  "embed_events": "Abubuwan da ke Faruwa a Ciki",
+  "likes": "Son",
+  "profile_views": "Duba Bayanan Martaba",
+  "new_matches": "Sabbin Dacewa",
+  "likes_received": "Son da aka samu",
+  "upgrade": "Haɓaka",
+  "edit_profile": "Gyara Bayanan Martaba",
+  "safety_settings": "Saitunan Tsaro",
+  "subscription": "Biyan Kuɗi",
+  "help": "Taimako",
+  "legal": "Doka",
+  "language": "Harshe",
+  "sign_out": "Fita",
+  "start_check-in": "Fara Shiga Tsaro",
+  "explore": "Bincika"
 }

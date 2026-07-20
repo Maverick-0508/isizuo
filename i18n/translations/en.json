@@ -127,5 +127,19 @@
   "sdk_description": "Add dating and social features to your app",
   "embed_chat": "Embed Chat",
   "embed_matching": "Embed Matching",
-  "embed_events": "Embed Events"
+  "embed_events": "Embed Events",
+  "likes": "Likes",
+  "profile_views": "Profile Views",
+  "new_matches": "New Matches",
+  "likes_received": "Likes Received",
+  "upgrade": "Upgrade",
+  "edit_profile": "Edit Profile",
+  "safety_settings": "Safety Settings",
+  "subscription": "Subscription",
+  "help": "Help",
+  "legal": "Legal",
+  "language": "Language",
+  "sign_out": "Sign Out",
+  "start_check-in": "Start Safety Check-In",
+  "explore": "Explore"
 }

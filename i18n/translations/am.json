@@ -127,5 +127,19 @@
   "sdk_description": "የደating እና ማህበራዊ ባህሪያት ወደ መተግበሪያዎ ያክሉ",
   "embed_chat": "ንግግር ውስጥ",
   "embed_matching": "መስ痼ያ ውስጥ",
-  "embed_events": "ክስቶች ውስጥ"
+  "embed_events": "ክስቶች ውስጥ",
+  "likes": "ፍቅር",
+  "profile_views": "የመገለጫ ተመልካች",
+  "new_matches": "አዲስ ማቻ",
+  "likes_received": "የተቀበሉ ፍቅሮች",
+  "upgrade": "ማሻሻያ",
+  "edit_profile": "መገለጫ ማስተካከያ",
+  "safety_settings": "የደህንነት ቅንብሮች",
+  "subscription": "ደንብ",
+  "help": "እርዳታ",
+  "legal": "ሕግ",
+  "language": "ቋንቋ",
+  "sign_out": "መውጣት",
+  "start_check-in": "ደህንነት ማረጋገጫ ጀምር",
+  "explore": "ምርምር"
 }

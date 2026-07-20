@@ -127,5 +127,19 @@
   "sdk_description": "Ongeza vipengele vya kuchumbiana na kijamii kwenye programu yako",
   "embed_chat": "Mazungumzo Ndani",
   "embed_matching": "Mecheana Ndani",
-  "embed_events": "Matukio Ndani"
+  "embed_events": "Matukio Ndani",
+  "likes": "Upendo",
+  "profile_views": "Mtazamo wa Wasifu",
+  "new_matches": "Mechi Mpya",
+  "likes_received": "Upendo Ulionyeshwa",
+  "upgrade": "Boresha",
+  "edit_profile": "Hariri Wasifu",
+  "safety_settings": "Mipangilio ya Usalama",
+  "subscription": "Usajili",
+  "help": "Msaada",
+  "legal": "Kisheria",
+  "language": "Lugha",
+  "sign_out": "Ondoka",
+  "start_check-in": "Anza Kuingia Salama",
+  "explore": "Chunguza"
 }
