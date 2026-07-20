@@ -2,7 +2,8 @@ import { Language } from '@/types';
 
 export const COLORS = {
   primary: '#E84393',
-  primaryDark: '#D63384',
+  primaryDark: '#C2185B',
+  primaryHero: '#B71C5C',
   primaryLight: '#F8A5C2',
   secondary: '#6C5CE7',
   secondaryDark: '#5A4BD1',
@@ -12,7 +13,7 @@ export const COLORS = {
   surface: '#FFFFFF',
   surfaceDark: '#EDEEF5',
   text: '#1A1A2E',
-  textLight: '#8E8EA0',
+  textLight: '#555566',
   textInverse: '#FFFFFF',
   border: '#E8E8F0',
   error: '#FF6B6B',
