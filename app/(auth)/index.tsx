@@ -32,7 +32,7 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.gradientBg}>
+      <View style={styles.gradientBg} pointerEvents="none">
         <View style={[styles.circle, styles.circle1]} />
         <View style={[styles.circle, styles.circle2]} />
         <View style={[styles.circle, styles.circle3]} />
@@ -47,7 +47,7 @@ export default function LoginScreen() {
                 <Text style={styles.logoLetter}>I</Text>
               </View>
             </View>
-            <Text style={styles.heroTitle}>Isizuo</Text>
+            <Text style={styles.heroTitle} accessibilityRole="header">Isizuo</Text>
             <Text style={styles.heroTagline}>Date. Connect. Belong.</Text>
             <Text style={styles.heroSubtitle}>
               The dating app built for African singles. Find meaningful connections rooted in culture, community, and values.
@@ -72,10 +72,10 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.formCard}>
-            <Text style={styles.formTitle}>Get started</Text>
+            <Text style={styles.formTitle} accessibilityRole="header">Get started</Text>
             <Text style={styles.formDesc}>Enter your email to create an account or sign in</Text>
 
-            <View style={styles.inputContainer}>
+            <View style={styles.inputContainer} accessibilityRole="form">
               <Ionicons name="mail-outline" size={20} color={COLORS.textLight} />
               <TextInput
                 style={styles.input}
@@ -86,6 +86,10 @@ export default function LoginScreen() {
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
+                accessibilityLabel="Email address"
+                accessibilityHint="Enter your email to sign in or create an account"
+                textContentType="emailAddress"
+                autoComplete="email"
               />
             </View>
 
@@ -106,7 +110,7 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.socialBtn}>
+            <TouchableOpacity style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google" accessibilityHint="Sign in using your Google account">
               <Ionicons name="logo-google" size={20} color="#DB4437" />
               <Text style={styles.socialBtnText}>Continue with Google</Text>
             </TouchableOpacity>
@@ -119,29 +123,29 @@ export default function LoginScreen() {
             </Text>
           </View>
 
-          <View style={styles.featuresGrid}>
-            <View style={styles.featureCard}>
+          <View style={styles.featuresGrid} accessibilityRole="summary">
+            <View style={styles.featureCard} accessibilityLabel="Verified Profiles: Every profile is verified for your safety">
               <View style={[styles.featureIcon, { backgroundColor: '#E8F5E9' }]}>
                 <Ionicons name="shield-checkmark" size={22} color={COLORS.safe} />
               </View>
               <Text style={styles.featureTitle}>Verified Profiles</Text>
               <Text style={styles.featureDesc}>Every profile is verified for your safety</Text>
             </View>
-            <View style={styles.featureCard}>
+            <View style={styles.featureCard} accessibilityLabel="Community First: Connect through shared cultural roots">
               <View style={[styles.featureIcon, { backgroundColor: '#E3F2FD' }]}>
                 <Ionicons name="people" size={22} color={COLORS.info} />
               </View>
               <Text style={styles.featureTitle}>Community First</Text>
               <Text style={styles.featureDesc}>Connect through shared cultural roots</Text>
             </View>
-            <View style={styles.featureCard}>
+            <View style={styles.featureCard} accessibilityLabel="Family Values: Find someone who shares your values">
               <View style={[styles.featureIcon, { backgroundColor: '#FCE4EC' }]}>
                 <Ionicons name="heart" size={22} color={COLORS.primary} />
               </View>
               <Text style={styles.featureTitle}>Family Values</Text>
               <Text style={styles.featureDesc}>Find someone who shares your values</Text>
             </View>
-            <View style={styles.featureCard}>
+            <View style={styles.featureCard} accessibilityLabel="Local Events: Meet at events in your city">
               <View style={[styles.featureIcon, { backgroundColor: '#FFF3E0' }]}>
                 <Ionicons name="location" size={22} color={COLORS.accentDark} />
               </View>
@@ -150,7 +154,7 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.usdBtn}>
+          <TouchableOpacity style={styles.usdBtn} accessibilityRole="button" accessibilityLabel="Sign in with Phone" accessibilityHint="USSD coming soon">
             <Ionicons name="call-outline" size={18} color={COLORS.primary} />
             <Text style={styles.usdText}>Sign in with Phone (USSD coming soon)</Text>
           </TouchableOpacity>
@@ -164,7 +168,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   gradientBg: {
     position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.55,
-    backgroundColor: COLORS.primary, overflow: 'hidden',
+    backgroundColor: COLORS.primaryHero, overflow: 'hidden',
   },
   circle: { position: 'absolute', borderRadius: 999 },
   circle1: { width: 350, height: 350, top: -100, right: -80, backgroundColor: COLORS.secondary, opacity: 0.2 },
@@ -178,9 +182,9 @@ const styles = StyleSheet.create({
   logoWrap: { marginBottom: SPACING.lg },
   logoIconBox: {
     width: 80, height: 80, borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
-    borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)',
   },
   logoLetter: {
     fontSize: 44, fontFamily: FONTS.black,
@@ -192,25 +196,25 @@ const styles = StyleSheet.create({
   },
   heroTagline: {
     fontSize: 16, fontFamily: FONTS.semiBold,
-    color: 'rgba(255,255,255,0.85)', letterSpacing: 1, textTransform: 'uppercase',
+    color: '#FFFFFF', letterSpacing: 1, textTransform: 'uppercase',
     marginBottom: SPACING.md,
   },
   heroSubtitle: {
     fontSize: 15, fontFamily: FONTS.regular,
-    color: 'rgba(255,255,255,0.75)', textAlign: 'center',
+    color: '#FFFFFF', textAlign: 'center',
     lineHeight: 22, paddingHorizontal: SPACING.md, maxWidth: 380,
   },
 
   statsRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     borderRadius: BORDER_RADIUS.lg, paddingVertical: 16, paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.xl, gap: 0,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 22, fontFamily: FONTS.black, color: COLORS.textInverse },
-  statLabel: { fontSize: 11, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.7)', marginTop: 2 },
-  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.2)' },
+  statValue: { fontSize: 22, fontFamily: FONTS.black, color: '#FFFFFF' },
+  statLabel: { fontSize: 11, fontFamily: FONTS.medium, color: '#FFFFFF', marginTop: 2 },
+  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.25)' },
 
   formCard: {
     backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg,
