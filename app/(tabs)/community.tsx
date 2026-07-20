@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
@@ -21,10 +20,34 @@ const SAMPLE_COMMUNITIES = [
 export default function CommunityScreen() {
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [communities, setCommunities] = useState(SAMPLE_COMMUNITIES);
 
-  const filteredCommunities = activeTab === 'joined'
-    ? SAMPLE_COMMUNITIES.filter(c => c.isJoined)
-    : SAMPLE_COMMUNITIES;
+  const joinedCount = communities.filter(c => c.isJoined).length;
+
+  const filteredCommunities = useMemo(() => {
+    let result = communities;
+    if (activeTab === 'joined') {
+      result = result.filter(c => c.isJoined);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(c =>
+        c.name.toLowerCase().includes(q) ||
+        c.description.toLowerCase().includes(q) ||
+        c.category.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [communities, activeTab, searchQuery]);
+
+  const handleJoinToggle = (communityId: string) => {
+    setCommunities(prev => prev.map(c =>
+      c.id === communityId
+        ? { ...c, isJoined: !c.isJoined, members: c.isJoined ? c.members - 1 : c.members + 1 }
+        : c
+    ));
+  };
 
   return (
     <View style={styles.container}>
@@ -33,14 +56,28 @@ export default function CommunityScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('communities')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel="Create community">
+        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel={t('create_event')}>
           <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar} accessibilityRole="search">
         <Ionicons name="search" size={20} color={COLORS.textLight} />
-        <Text style={styles.searchPlaceholder}>Search communities...</Text>
+        <TextInput
+          style={styles.searchInput}
+          placeholder={t('search_communities')}
+          placeholderTextColor={COLORS.textLight}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel={t('search_communities')}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel={t('cancel')}>
+            <Ionicons name="close-circle" size={20} color={COLORS.textLight} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <View style={styles.tabRow} accessibilityRole="tablist">
@@ -49,24 +86,34 @@ export default function CommunityScreen() {
           onPress={() => setActiveTab('discover')}
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'discover' }}
-          accessibilityLabel="Discover communities"
+          accessibilityLabel={t('discover')}
         >
-          <Text style={[styles.tabBtnText, activeTab === 'discover' && styles.tabBtnTextActive]}>Discover</Text>
+          <Text style={[styles.tabBtnText, activeTab === 'discover' && styles.tabBtnTextActive]}>{t('discover')}</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === 'joined' && styles.tabBtnActive]}
           onPress={() => setActiveTab('joined')}
           accessibilityRole="tab"
           accessibilityState={{ selected: activeTab === 'joined' }}
-          accessibilityLabel={`Joined communities (${SAMPLE_COMMUNITIES.filter(c => c.isJoined).length})`}
+          accessibilityLabel={`${t('joined')} (${joinedCount})`}
         >
-          <Text style={[styles.tabBtnText, activeTab === 'joined' && styles.tabBtnTextActive]}>Joined ({SAMPLE_COMMUNITIES.filter(c => c.isJoined).length})</Text>
+          <Text style={[styles.tabBtnText, activeTab === 'joined' && styles.tabBtnTextActive]}>{t('joined')} ({joinedCount})</Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {filteredCommunities.length === 0 && (
+          <View style={styles.emptyEvents}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="people-outline" size={36} color={COLORS.primaryLight} />
+            </View>
+            <Text style={styles.emptyTitle}>{t('no_matches')}</Text>
+            <Text style={styles.emptyDesc}>{t('search_filters')}</Text>
+          </View>
+        )}
+
         {filteredCommunities.map((community) => (
-          <TouchableOpacity key={community.id} style={styles.communityCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${community.name}, ${community.members} members. ${community.description}`}>
+          <TouchableOpacity key={community.id} style={styles.communityCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${community.name}, ${community.members} ${t('members')}. ${community.description}`}>
             <View style={[styles.communityIcon, { backgroundColor: community.color + '15' }]}>
               <Text style={[styles.communityInitial, { color: community.color }]}>
                 {community.name.charAt(0)}
@@ -83,16 +130,16 @@ export default function CommunityScreen() {
                 <Badge label={community.category} variant="info" size="sm" />
                 <View style={styles.memberCount}>
                   <Ionicons name="people-outline" size={12} color={COLORS.textLight} />
-                  <Text style={styles.memberText}>{community.members.toLocaleString()} members</Text>
+                  <Text style={styles.memberText}>{community.members.toLocaleString()} {t('members')}</Text>
                 </View>
               </View>
               <Text style={styles.communityDesc} numberOfLines={2}>{community.description}</Text>
             </View>
             <View style={styles.communityAction}>
               {community.isJoined ? (
-                <Button title="Joined" variant="outline" size="sm" icon="checkmark" onPress={() => {}} />
+                <Button title={t('joined_status')} variant="outline" size="sm" icon="checkmark" onPress={() => handleJoinToggle(community.id)} />
               ) : (
-                <Button title="Join" variant="primary" size="sm" icon="add" onPress={() => {}} />
+                <Button title={t('join')} variant="primary" size="sm" icon="add" onPress={() => handleJoinToggle(community.id)} />
               )}
             </View>
           </TouchableOpacity>
@@ -119,7 +166,9 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.lg, paddingVertical: 16,
     gap: SPACING.md, ...SHADOWS.sm,
   },
-  searchPlaceholder: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, flex: 1 },
+  searchInput: {
+    flex: 1, fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.text,
+  },
   tabRow: {
     flexDirection: 'row', backgroundColor: COLORS.surface, marginHorizontal: SPACING.lg, marginTop: SPACING.md,
     borderRadius: BORDER_RADIUS.xl, padding: 4, ...SHADOWS.sm,
@@ -143,4 +192,14 @@ const styles = StyleSheet.create({
   memberText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight },
   communityDesc: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, lineHeight: 20 },
   communityAction: { marginLeft: SPACING.sm },
+  emptyEvents: {
+    alignItems: 'center', paddingVertical: SPACING.xl * 2, backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.xl, ...SHADOWS.sm,
+  },
+  emptyIconWrap: {
+    width: 72, height: 72, borderRadius: 24, backgroundColor: COLORS.primary + '10',
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md,
+  },
+  emptyTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text },
+  emptyDesc: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 4 },
 });
