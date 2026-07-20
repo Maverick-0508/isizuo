@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
@@ -9,28 +9,50 @@ import { Logo } from '@/components/Logo';
 const { width } = Dimensions.get('window');
 
 const EVENT_CATEGORIES = [
-  { key: 'all', label: 'All Events', icon: 'globe' },
-  { key: 'social', label: 'Social', icon: 'people' },
-  { key: 'professional', label: 'Professional', icon: 'briefcase' },
-  { key: 'cultural', label: 'Cultural', icon: 'earth' },
-  { key: 'sports', label: 'Sports', icon: 'football' },
+  { key: 'all', labelKey: 'explore' as const, icon: 'globe' },
+  { key: 'social', labelKey: 'community_groups' as const, icon: 'people' },
+  { key: 'professional', labelKey: 'professional_network' as const, icon: 'briefcase' },
+  { key: 'cultural', labelKey: 'cultural_groups' as const, icon: 'earth' },
+  { key: 'sports', labelKey: 'hobby_groups' as const, icon: 'football' },
 ];
 
 const SAMPLE_EVENTS = [
-  { id: '1', title: 'Lagos Tech Meetup', date: 'Sat, Jul 26', time: '6:00 PM', location: 'Eko Convention Centre, Lagos', category: 'professional', attendees: 128, isFree: true, color: '#5B4BD5', description: 'Connect with Africa\'s brightest tech minds.' },
-  { id: '2', title: 'Nairobi Sunset Mixer', date: 'Fri, Jul 25', time: '5:00 PM', location: 'Nairobi Arboretum', category: 'social', attendees: 86, isFree: true, color: '#B32464', description: 'Network over drinks and live music.' },
-  { id: '3', title: 'Afro-Cultural Night', date: 'Sat, Aug 2', time: '7:00 PM', location: 'Addis Ababa Cultural Centre', category: 'cultural', attendees: 240, isFree: false, color: '#E8A820', description: 'Celebrate African heritage through art and dance.' },
-  { id: '4', title: '5K Charity Run', date: 'Sun, Jul 27', time: '7:00 AM', location: 'Johannesburg Zoo Lake', category: 'sports', attendees: 64, isFree: false, color: '#00A878', description: 'Run for a cause. All proceeds go to education.' },
-  { id: '5', title: 'Women in Business Summit', date: 'Aug 15', time: '9:00 AM', location: 'Abuja International Conference Centre', category: 'professional', attendees: 310, isFree: false, color: '#8B7FF5', description: 'Empowering women entrepreneurs across Africa.' },
+  { id: '1', title: 'Lagos Tech Meetup', date: 'Sat, Jul 26', time: '6:00 PM', location: 'Eko Convention Centre, Lagos', category: 'professional', attendees: 128, isFree: true, color: '#5B4BD5', description: 'Connect with Africa\'s brightest tech minds.', rsvp: false },
+  { id: '2', title: 'Nairobi Sunset Mixer', date: 'Fri, Jul 25', time: '5:00 PM', location: 'Nairobi Arboretum', category: 'social', attendees: 86, isFree: true, color: '#B32464', description: 'Network over drinks and live music.', rsvp: false },
+  { id: '3', title: 'Afro-Cultural Night', date: 'Sat, Aug 2', time: '7:00 PM', location: 'Addis Ababa Cultural Centre', category: 'cultural', attendees: 240, isFree: false, color: '#E8A820', description: 'Celebrate African heritage through art and dance.', rsvp: false },
+  { id: '4', title: '5K Charity Run', date: 'Sun, Jul 27', time: '7:00 AM', location: 'Johannesburg Zoo Lake', category: 'sports', attendees: 64, isFree: false, color: '#00A878', description: 'Run for a cause. All proceeds go to education.', rsvp: false },
+  { id: '5', title: 'Women in Business Summit', date: 'Aug 15', time: '9:00 AM', location: 'Abuja International Conference Centre', category: 'professional', attendees: 310, isFree: false, color: '#8B7FF5', description: 'Empowering women entrepreneurs across Africa.', rsvp: false },
 ];
 
 export default function EventsScreen() {
   const { t } = useTranslation();
   const [activeCategory, setActiveCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [events, setEvents] = useState(SAMPLE_EVENTS);
 
-  const filteredEvents = activeCategory === 'all'
-    ? SAMPLE_EVENTS
-    : SAMPLE_EVENTS.filter(e => e.category === activeCategory);
+  const filteredEvents = useMemo(() => {
+    let result = events;
+    if (activeCategory !== 'all') {
+      result = result.filter(e => e.category === activeCategory);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(e =>
+        e.title.toLowerCase().includes(q) ||
+        e.location.toLowerCase().includes(q) ||
+        e.description.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [events, activeCategory, searchQuery]);
+
+  const handleRSVP = (eventId: string) => {
+    setEvents(prev => prev.map(e =>
+      e.id === eventId
+        ? { ...e, rsvp: !e.rsvp, attendees: e.rsvp ? e.attendees - 1 : e.attendees + 1 }
+        : e
+    ));
+  };
 
   return (
     <View style={styles.container}>
@@ -39,17 +61,28 @@ export default function EventsScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('events')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel="Create event">
+        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel={t('create_event')}>
           <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar} accessibilityRole="search">
         <Ionicons name="search" size={20} color={COLORS.textLight} />
-        <Text style={styles.searchPlaceholder}>Search events...</Text>
-        <TouchableOpacity style={styles.searchFilter} accessibilityRole="button" accessibilityLabel="Filter events">
-          <Ionicons name="options-outline" size={18} color={COLORS.primary} />
-        </TouchableOpacity>
+        <TextInput
+          style={styles.searchInput}
+          placeholder={t('search_events')}
+          placeholderTextColor={COLORS.textLight}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          autoCapitalize="none"
+          autoCorrect={false}
+          accessibilityLabel={t('search_events')}
+        />
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={() => setSearchQuery('')} accessibilityRole="button" accessibilityLabel={t('cancel')}>
+            <Ionicons name="close-circle" size={20} color={COLORS.textLight} />
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll} contentContainerStyle={styles.categoriesContent}>
@@ -59,25 +92,35 @@ export default function EventsScreen() {
             style={[styles.categoryPill, activeCategory === cat.key && styles.categoryPillActive]}
             onPress={() => setActiveCategory(cat.key)}
             accessibilityRole="button"
-            accessibilityLabel={cat.label}
+            accessibilityLabel={t(cat.labelKey)}
             accessibilityState={{ selected: activeCategory === cat.key }}
           >
             <Ionicons name={cat.icon as any} size={16} color={activeCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
-            <Text style={[styles.categoryText, activeCategory === cat.key && styles.categoryTextActive]}>{cat.label}</Text>
+            <Text style={[styles.categoryText, activeCategory === cat.key && styles.categoryTextActive]}>{t(cat.labelKey)}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">Featured Events</Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all featured events">
-            <Text style={styles.seeAll}>See all</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">{t('featured_events')}</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')}>
+            <Text style={styles.seeAll}>{t('see_all')}</Text>
           </TouchableOpacity>
         </View>
 
+        {filteredEvents.length === 0 && (
+          <View style={styles.emptyEvents}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="search-outline" size={36} color={COLORS.primaryLight} />
+            </View>
+            <Text style={styles.emptyTitle}>{t('no_upcoming_events')}</Text>
+            <Text style={styles.emptyDesc}>{t('rsvp_to_events')}</Text>
+          </View>
+        )}
+
         {filteredEvents.map((event) => (
-          <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${event.title}, ${event.date}, ${event.time}, ${event.location}, ${event.attendees} attendees`}>
+          <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${event.title}, ${event.date}, ${event.time}, ${event.location}, ${event.attendees} ${t('going')}`}>
             <View style={[styles.eventCover, { backgroundColor: event.color + '12' }]}>
               <View style={[styles.eventIconCircle, { backgroundColor: event.color + '20' }]}>
                 <Ionicons name={EVENT_CATEGORIES.find(c => c.key === event.category)?.icon as any || 'calendar'} size={26} color={event.color} />
@@ -97,33 +140,39 @@ export default function EventsScreen() {
                 </View>
                 <View style={styles.eventMetaItem}>
                   <Ionicons name="people-outline" size={13} color={COLORS.textLight} />
-                  <Text style={styles.eventMetaText}>{event.attendees} going</Text>
+                  <Text style={styles.eventMetaText}>{event.attendees} {t('going')}</Text>
                 </View>
               </View>
               <View style={styles.eventActions}>
                 {event.isFree ? (
-                  <Badge label="Free" variant="success" icon="checkmark-circle" />
+                  <Badge label={t('free')} variant="success" icon="checkmark-circle" />
                 ) : (
-                  <Badge label="Paid" variant="info" icon="card" />
+                  <Badge label={t('paid')} variant="info" icon="card" />
                 )}
-                <Button title="RSVP" variant="primary" size="sm" icon="checkmark" onPress={() => {}} />
+                <Button
+                  title={event.rsvp ? t('cancel') : t('rsvp')}
+                  variant={event.rsvp ? 'outline' : 'primary'}
+                  size="sm"
+                  icon={event.rsvp ? 'close' : 'checkmark'}
+                  onPress={() => handleRSVP(event.id)}
+                />
               </View>
             </View>
           </TouchableOpacity>
         ))}
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle} accessibilityRole="header">Your Events</Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all your events">
-            <Text style={styles.seeAll}>See all</Text>
+          <Text style={styles.sectionTitle} accessibilityRole="header">{t('your_events')}</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')}>
+            <Text style={styles.seeAll}>{t('see_all')}</Text>
           </TouchableOpacity>
         </View>
         <View style={styles.emptyEvents}>
           <View style={styles.emptyIconWrap}>
             <Ionicons name="calendar-outline" size={36} color={COLORS.primaryLight} />
           </View>
-          <Text style={styles.emptyTitle}>No upcoming events</Text>
-          <Text style={styles.emptyDesc}>RSVP to events to see them here</Text>
+          <Text style={styles.emptyTitle}>{t('no_upcoming_events')}</Text>
+          <Text style={styles.emptyDesc}>{t('rsvp_to_events')}</Text>
         </View>
       </ScrollView>
     </View>
@@ -147,8 +196,9 @@ const styles = StyleSheet.create({
     marginTop: SPACING.sm, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.lg, paddingVertical: 16,
     gap: SPACING.md, ...SHADOWS.sm,
   },
-  searchPlaceholder: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, flex: 1 },
-  searchFilter: { padding: 4 },
+  searchInput: {
+    flex: 1, fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.text,
+  },
   categoriesScroll: { marginTop: SPACING.md },
   categoriesContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
   categoryPill: {
