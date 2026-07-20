@@ -40,12 +40,12 @@ export default function ExploreScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Explore</Text>
         </View>
-        <TouchableOpacity style={styles.filterBtn}>
+        <TouchableOpacity style={styles.filterBtn} accessibilityRole="button" accessibilityLabel="Filter profiles">
           <Ionicons name="options-outline" size={20} color={COLORS.text} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchBar}>
+      <View style={styles.searchBar} accessibilityRole="search">
         <Ionicons name="search" size={18} color={COLORS.textLight} />
         <Text style={styles.searchPlaceholder}>Search by name, community, or interest...</Text>
       </View>
@@ -56,6 +56,9 @@ export default function ExploreScreen() {
             key={cat.key}
             style={[styles.categoryPill, activeCategory === cat.key && styles.categoryPillActive]}
             onPress={() => setActiveCategory(cat.key)}
+            accessibilityRole="button"
+            accessibilityLabel={cat.label}
+            accessibilityState={{ selected: activeCategory === cat.key }}
           >
             <Ionicons name={cat.icon as any} size={14} color={activeCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
             <Text style={[styles.categoryText, activeCategory === cat.key && styles.categoryTextActive]}>{cat.label}</Text>
@@ -71,7 +74,7 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.gridContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
-          <TouchableOpacity style={styles.profileCard} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.profileCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`${item.name}, ${item.age}, ${item.location}. ${item.bio}`}>
             <View style={styles.profileImageContainer}>
               <View style={[styles.profileImage, { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] + '20' }]}>
                 <Text style={[styles.profileInitials, { color: AVATAR_COLORS[index % AVATAR_COLORS.length] }]}>
