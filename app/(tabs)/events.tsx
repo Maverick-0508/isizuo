@@ -39,15 +39,15 @@ export default function EventsScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t('events')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn}>
+        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel="Create event">
           <Ionicons name="add" size={22} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchBar}>
+      <View style={styles.searchBar} accessibilityRole="search">
         <Ionicons name="search" size={18} color={COLORS.textLight} />
         <Text style={styles.searchPlaceholder}>Search events...</Text>
-        <TouchableOpacity style={styles.searchFilter}>
+        <TouchableOpacity style={styles.searchFilter} accessibilityRole="button" accessibilityLabel="Filter events">
           <Ionicons name="options-outline" size={16} color={COLORS.primary} />
         </TouchableOpacity>
       </View>
@@ -58,6 +58,9 @@ export default function EventsScreen() {
             key={cat.key}
             style={[styles.categoryPill, activeCategory === cat.key && styles.categoryPillActive]}
             onPress={() => setActiveCategory(cat.key)}
+            accessibilityRole="button"
+            accessibilityLabel={cat.label}
+            accessibilityState={{ selected: activeCategory === cat.key }}
           >
             <Ionicons name={cat.icon as any} size={14} color={activeCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
             <Text style={[styles.categoryText, activeCategory === cat.key && styles.categoryTextActive]}>{cat.label}</Text>
@@ -67,14 +70,14 @@ export default function EventsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Featured Events</Text>
-          <TouchableOpacity>
+          <Text style={styles.sectionTitle} accessibilityRole="header">Featured Events</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all featured events">
             <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
 
         {filteredEvents.map((event) => (
-          <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.85}>
+          <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`${event.title}, ${event.date}, ${event.time}, ${event.location}, ${event.attendees} attendees`}>
             <View style={[styles.eventCover, { backgroundColor: event.color + '12' }]}>
               <View style={[styles.eventIconCircle, { backgroundColor: event.color + '20' }]}>
                 <Ionicons name={EVENT_CATEGORIES.find(c => c.key === event.category)?.icon as any || 'calendar'} size={24} color={event.color} />
@@ -110,8 +113,8 @@ export default function EventsScreen() {
         ))}
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Events</Text>
-          <TouchableOpacity>
+          <Text style={styles.sectionTitle} accessibilityRole="header">Your Events</Text>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all your events">
             <Text style={styles.seeAll}>See all</Text>
           </TouchableOpacity>
         </View>
