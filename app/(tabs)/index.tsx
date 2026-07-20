@@ -46,7 +46,7 @@ export default function MatchesScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Isizuo</Text>
         </View>
-        <TouchableOpacity style={styles.notifBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+        <TouchableOpacity style={styles.notifBtn} accessibilityRole="button" accessibilityLabel={t('notifications')}>
           <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
           <View style={styles.notifDot} />
         </TouchableOpacity>
@@ -73,11 +73,11 @@ export default function MatchesScreen() {
             {/* New Matches - Large Horizontal Scroll */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle} accessibilityRole="header">{t('new_matches')}</Text>
-              <Badge label="6 new" variant="success" icon="sparkles" />
+              <Badge label={`${SAMPLE_MATCHES.length} ${t('new_count')}`} variant="success" icon="sparkles" />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newMatchesScroll} contentContainerStyle={styles.newMatchesContent}>
               {SAMPLE_MATCHES.slice(0, 4).map((m, i) => (
-                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`New match: ${m.name}`}>
+                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${m.name}`}>
                   <LinearGradient
                     colors={AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length] as readonly [string, string]}
                     start={{ x: 0, y: 0 }}
@@ -97,13 +97,13 @@ export default function MatchesScreen() {
 
             {/* Conversations - Large Cards */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle} accessibilityRole="header">Messages</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all conversations">
-                <Text style={styles.seeAll}>See all</Text>
+              <Text style={styles.sectionTitle} accessibilityRole="header">{t('messages')}</Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')}>
+                <Text style={styles.seeAll}>{t('see_all')}</Text>
               </TouchableOpacity>
             </View>
             {SAMPLE_MATCHES.map((match, i) => (
-              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`Chat with ${match.name}`}>
+              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${match.name}`}>
                 <View style={styles.chatCardLeft}>
                   <LinearGradient
                     colors={AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length] as readonly [string, string]}
@@ -155,7 +155,7 @@ export default function MatchesScreen() {
             </LinearGradient>
             <Text style={styles.premiumTitle} accessibilityRole="header">{t('likes_received')}</Text>
             <Text style={styles.premiumDesc}>
-              Upgrade to see who liked your profile. Get unlimited swipes and more!
+              {t('upgrade_to_see_likes')}
             </Text>
             <Button title={t('upgrade')} variant="gradient" onPress={() => {}} icon="diamond" fullWidth gradient={GRADIENTS.sunset as readonly [string, string]} />
           </View>
@@ -173,7 +173,7 @@ export default function MatchesScreen() {
             </LinearGradient>
             <Text style={styles.premiumTitle} accessibilityRole="header">{t('profile_views')}</Text>
             <Text style={styles.premiumDesc}>
-              See who viewed your profile in the last 30 days. Get premium to unlock this feature.
+              {t('see_profile_views')}
             </Text>
             <Button title={t('upgrade')} variant="gradient" onPress={() => {}} icon="diamond" fullWidth gradient={GRADIENTS.ocean as readonly [string, string]} />
           </View>
