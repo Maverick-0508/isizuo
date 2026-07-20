@@ -16,7 +16,7 @@ const CATEGORIES = [
   { key: 'premium', label: 'Premium', icon: 'diamond' },
 ];
 
-const AVATAR_COLORS = ['#E84393', '#6C5CE7', '#00B894', '#FDCB6E', '#FF6B6B', '#74B9FF', '#A29BFE', '#55EFC4'];
+const AVATAR_COLORS = ['#B32464', '#5B4BD5', '#00A878', '#E8A820', '#DC3545', '#4A90D9', '#8B7FF5', '#00A878'];
 
 const SAMPLE_PROFILES = [
   { id: '1', name: 'Amara O.', age: 26, location: 'Lagos', bio: 'Software Engineer. Love to travel and cook traditional meals.', community: 'Yoruba', isVerified: true, isPremium: true, distance: '2 km', interests: ['Tech', 'Travel', 'Cooking'] },
@@ -38,7 +38,7 @@ export default function ExploreScreen() {
       <View style={styles.header}>
         <Logo size="sm" showText={false} />
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>Explore</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">Explore</Text>
         </View>
         <TouchableOpacity style={styles.filterBtn} accessibilityRole="button" accessibilityLabel="Filter profiles">
           <Ionicons name="options-outline" size={20} color={COLORS.text} />
@@ -46,7 +46,7 @@ export default function ExploreScreen() {
       </View>
 
       <View style={styles.searchBar} accessibilityRole="search">
-        <Ionicons name="search" size={18} color={COLORS.textLight} />
+        <Ionicons name="search" size={20} color={COLORS.textLight} />
         <Text style={styles.searchPlaceholder}>Search by name, community, or interest...</Text>
       </View>
 
@@ -60,7 +60,7 @@ export default function ExploreScreen() {
             accessibilityLabel={cat.label}
             accessibilityState={{ selected: activeCategory === cat.key }}
           >
-            <Ionicons name={cat.icon as any} size={14} color={activeCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
+            <Ionicons name={cat.icon as any} size={16} color={activeCategory === cat.key ? COLORS.textInverse : COLORS.textLight} />
             <Text style={[styles.categoryText, activeCategory === cat.key && styles.categoryTextActive]}>{cat.label}</Text>
           </TouchableOpacity>
         ))}
@@ -74,36 +74,38 @@ export default function ExploreScreen() {
         contentContainerStyle={styles.gridContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => (
-          <TouchableOpacity style={styles.profileCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`${item.name}, ${item.age}, ${item.location}. ${item.bio}`}>
+          <TouchableOpacity style={styles.profileCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${item.name}, ${item.age}, ${item.location}. ${item.bio}`}>
             <View style={styles.profileImageContainer}>
-              <View style={[styles.profileImage, { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] + '20' }]}>
+              <View style={[styles.profileImage, { backgroundColor: AVATAR_COLORS[index % AVATAR_COLORS.length] + '25' }]}>
                 <Text style={[styles.profileInitials, { color: AVATAR_COLORS[index % AVATAR_COLORS.length] }]}>
                   {item.name.split(' ').map(n => n[0]).join('')}
                 </Text>
               </View>
+              <View style={styles.profileGradient} pointerEvents="none" />
               <View style={styles.profileOverlay}>
                 <View style={styles.distanceBadge}>
                   <Ionicons name="location" size={10} color={COLORS.textInverse} />
                   <Text style={styles.distanceText}>{item.distance}</Text>
                 </View>
-                {item.isVerified && (
-                  <View style={styles.verifiedBadge}>
-                    <Ionicons name="checkmark-circle" size={16} color={COLORS.info} />
-                  </View>
-                )}
-                {item.isPremium && (
-                  <View style={styles.premiumBadge}>
+                <View style={styles.profileBadges}>
+                  {item.isVerified && (
+                    <Ionicons name="checkmark-circle" size={16} color={COLORS.textInverse} />
+                  )}
+                  {item.isPremium && (
                     <Ionicons name="diamond" size={12} color={COLORS.premium} />
-                  </View>
-                )}
+                  )}
+                </View>
+              </View>
+              <View style={styles.profileBottomOverlay} pointerEvents="none" />
+              <View style={styles.profileNameOverlay}>
+                <Text style={styles.profileName}>{item.name}, {item.age}</Text>
+                <View style={styles.locationRow}>
+                  <Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.8)" />
+                  <Text style={styles.profileLocation}>{item.location}</Text>
+                </View>
               </View>
             </View>
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{item.name}, {item.age}</Text>
-              <View style={styles.locationRow}>
-                <Ionicons name="location-outline" size={10} color={COLORS.textLight} />
-                <Text style={styles.profileLocation}>{item.location}</Text>
-              </View>
               <Text style={styles.profileBio} numberOfLines={2}>{item.bio}</Text>
               <View style={styles.interestTags}>
                 {item.interests.slice(0, 2).map((interest) => (
@@ -124,54 +126,62 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.sm,
+    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.md,
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.5 },
-  filterBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
+  headerTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.6 },
+  filterBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.md, paddingVertical: 14,
-    gap: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, marginHorizontal: SPACING.lg,
+    marginTop: SPACING.sm, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.lg, paddingVertical: 16,
+    gap: SPACING.md, ...SHADOWS.sm,
   },
-  searchPlaceholder: { fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textLight, flex: 1 },
+  searchPlaceholder: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, flex: 1 },
   categoriesScroll: { marginTop: SPACING.md },
   categoriesContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
   categoryPill: {
-    flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 10,
-    borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12,
+    borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.surface, ...SHADOWS.sm,
   },
-  categoryPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  categoryText: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.textLight },
+  categoryPillActive: { backgroundColor: COLORS.primary },
+  categoryText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textLight },
   categoryTextActive: { color: COLORS.textInverse },
-  row: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
-  gridContent: { paddingVertical: SPACING.md, gap: SPACING.sm },
+  row: { paddingHorizontal: SPACING.lg, gap: SPACING.md },
+  gridContent: { paddingVertical: SPACING.md, gap: SPACING.md },
   profileCard: {
-    flex: 1, backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, overflow: 'hidden', marginBottom: SPACING.sm,
-    borderWidth: 1, borderColor: COLORS.border,
+    flex: 1, backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', marginBottom: SPACING.sm,
+    ...SHADOWS.card,
   },
-  profileImageContainer: { height: 180, position: 'relative' },
+  profileImageContainer: { height: 220, position: 'relative' },
   profileImage: {
     width: '100%', height: '100%',
     alignItems: 'center', justifyContent: 'center',
   },
-  profileInitials: { fontSize: 40, fontFamily: FONTS.bold },
-  profileOverlay: { position: 'absolute', top: 8, right: 8, gap: 6 },
-  distanceBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 2, backgroundColor: 'rgba(0,0,0,0.6)',
-    paddingHorizontal: 8, paddingVertical: 4, borderRadius: BORDER_RADIUS.full, alignSelf: 'flex-start',
+  profileInitials: { fontSize: 48, fontFamily: FONTS.extraBold, letterSpacing: -1 },
+  profileGradient: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   },
-  distanceText: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.textInverse },
-  verifiedBadge: { alignSelf: 'flex-start' },
-  premiumBadge: { alignSelf: 'flex-start' },
-  profileInfo: { padding: SPACING.sm },
-  profileName: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 3 },
-  profileLocation: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight },
-  profileBio: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 6, lineHeight: 17 },
-  interestTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 4, marginTop: 8 },
-  interestTag: { backgroundColor: COLORS.primary + '12', paddingHorizontal: 10, paddingVertical: 4, borderRadius: BORDER_RADIUS.full },
-  interestTagText: { fontSize: 11, fontFamily: FONTS.semiBold, color: COLORS.primary },
+  profileOverlay: { position: 'absolute', top: 10, right: 10, left: 10, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  distanceBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: BORDER_RADIUS.full,
+    backdropFilter: 'blur(8px)',
+  },
+  distanceText: { fontSize: 12, fontFamily: FONTS.semiBold, color: COLORS.textInverse },
+  profileBadges: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  profileBottomOverlay: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: 100,
+    backgroundColor: 'transparent',
+    backgroundImage: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+  },
+  profileNameOverlay: { position: 'absolute', bottom: 10, left: 12, right: 12 },
+  profileName: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: -0.3 },
+  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginTop: 2 },
+  profileLocation: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.8)' },
+  profileInfo: { padding: SPACING.md },
+  profileBio: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.textSecondary, lineHeight: 21, marginBottom: 8 },
+  interestTags: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  interestTag: { backgroundColor: COLORS.primary + '10', paddingHorizontal: 12, paddingVertical: 5, borderRadius: BORDER_RADIUS.full },
+  interestTagText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.primary },
 });

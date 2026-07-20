@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     fontFamily: FONTS.medium,
-    fontSize: 12,
-    letterSpacing: 0.2,
+    fontSize: 14,
+    letterSpacing: 0.3,
   },
 });

@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
-import { StyleSheet, Platform } from 'react-native';
+import { StyleSheet, Platform, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { COLORS, FONTS } from '@/constants';
+import { COLORS, FONTS, BORDER_RADIUS, SHADOWS } from '@/constants';
 import { useTranslation } from '@/hooks';
 
 export default function TabsLayout() {
@@ -23,8 +23,9 @@ export default function TabsLayout() {
         options={{
           title: t('matches'),
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: t('matches'),
         }}
       />
       <Tabs.Screen
@@ -32,8 +33,9 @@ export default function TabsLayout() {
         options={{
           title: t('explore'),
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: t('explore'),
         }}
       />
       <Tabs.Screen
@@ -41,8 +43,9 @@ export default function TabsLayout() {
         options={{
           title: t('events'),
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'calendar' : 'calendar-outline'} size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: t('events'),
         }}
       />
       <Tabs.Screen
@@ -50,8 +53,9 @@ export default function TabsLayout() {
         options={{
           title: t('communities'),
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'people' : 'people-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'people' : 'people-outline'} size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: t('communities'),
         }}
       />
       <Tabs.Screen
@@ -59,8 +63,9 @@ export default function TabsLayout() {
         options={{
           title: t('settings'),
           tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />
+            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
           ),
+          tabBarAccessibilityLabel: t('settings'),
         }}
       />
     </Tabs>
@@ -69,21 +74,24 @@ export default function TabsLayout() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: COLORS.card,
+    backgroundColor: COLORS.glassBg,
     borderTopWidth: 0,
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
     shadowColor: COLORS.shadow,
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
-    elevation: 16,
-    height: Platform.OS === 'ios' ? 88 : 68,
+    shadowOffset: { width: 0, height: -8 },
+    shadowOpacity: 0.06,
+    shadowRadius: 20,
+    elevation: 0,
+    height: Platform.OS === 'ios' ? 92 : 72,
     paddingBottom: Platform.OS === 'ios' ? 28 : 8,
-    paddingTop: 10,
+    paddingTop: 12,
+    paddingHorizontal: 8,
   },
   tabLabel: {
     fontSize: 11,
     fontFamily: FONTS.semiBold,
-    letterSpacing: 0.2,
-    marginTop: 2,
+    letterSpacing: 0.3,
+    marginTop: 4,
   },
 });

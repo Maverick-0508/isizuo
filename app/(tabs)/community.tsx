@@ -9,12 +9,12 @@ import { Logo } from '@/components/Logo';
 const { width } = Dimensions.get('window');
 
 const SAMPLE_COMMUNITIES = [
-  { id: '1', name: 'Yoruba Connect', members: 2340, category: 'Cultural', color: '#6C5CE7', description: 'A space for Yoruba singles to connect, share culture, and find love.', isVerified: true, isJoined: true },
-  { id: '2', name: 'Nairobi Tech Singles', members: 890, category: 'Professional', color: '#E84393', description: 'Tech professionals looking for meaningful connections.', isVerified: true, isJoined: false },
-  { id: '3', name: 'Lagos Foodies', members: 1560, category: 'Interest', color: '#FDCB6E', description: 'Bond over your love for African cuisine.', isVerified: false, isJoined: false },
-  { id: '4', name: 'Swahili Hearts', members: 3120, category: 'Cultural', color: '#00B894', description: 'Connecting Swahili speakers across East Africa.', isVerified: true, isJoined: true },
-  { id: '5', name: 'Abuja Elite', members: 670, category: 'Lifestyle', color: '#A29BFE', description: 'For professionals in Abuja seeking quality relationships.', isVerified: false, isJoined: false },
-  { id: '6', name: 'Igbo Heritage', members: 1890, category: 'Cultural', color: '#FF6B6B', description: 'Celebrating Igbo culture while finding love.', isVerified: true, isJoined: false },
+  { id: '1', name: 'Yoruba Connect', members: 2340, category: 'Cultural', color: '#5B4BD5', description: 'A space for Yoruba singles to connect, share culture, and find love.', isVerified: true, isJoined: true },
+  { id: '2', name: 'Nairobi Tech Singles', members: 890, category: 'Professional', color: '#B32464', description: 'Tech professionals looking for meaningful connections.', isVerified: true, isJoined: false },
+  { id: '3', name: 'Lagos Foodies', members: 1560, category: 'Interest', color: '#E8A820', description: 'Bond over your love for African cuisine.', isVerified: false, isJoined: false },
+  { id: '4', name: 'Swahili Hearts', members: 3120, category: 'Cultural', color: '#00A878', description: 'Connecting Swahili speakers across East Africa.', isVerified: true, isJoined: true },
+  { id: '5', name: 'Abuja Elite', members: 670, category: 'Lifestyle', color: '#8B7FF5', description: 'For professionals in Abuja seeking quality relationships.', isVerified: false, isJoined: false },
+  { id: '6', name: 'Igbo Heritage', members: 1890, category: 'Cultural', color: '#DC3545', description: 'Celebrating Igbo culture while finding love.', isVerified: true, isJoined: false },
 ];
 
 export default function CommunityScreen() {
@@ -30,15 +30,15 @@ export default function CommunityScreen() {
       <View style={styles.header}>
         <Logo size="sm" showText={false} />
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t('communities')}</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">{t('communities')}</Text>
         </View>
         <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel="Create community">
-          <Ionicons name="add" size={22} color={COLORS.textInverse} />
+          <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar} accessibilityRole="search">
-        <Ionicons name="search" size={18} color={COLORS.textLight} />
+        <Ionicons name="search" size={20} color={COLORS.textLight} />
         <Text style={styles.searchPlaceholder}>Search communities...</Text>
       </View>
 
@@ -65,7 +65,7 @@ export default function CommunityScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {filteredCommunities.map((community) => (
-          <TouchableOpacity key={community.id} style={styles.communityCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`${community.name}, ${community.members} members. ${community.description}`}>
+          <TouchableOpacity key={community.id} style={styles.communityCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${community.name}, ${community.members} members. ${community.description}`}>
             <View style={[styles.communityIcon, { backgroundColor: community.color + '15' }]}>
               <Text style={[styles.communityInitial, { color: community.color }]}>
                 {community.name.charAt(0)}
@@ -75,14 +75,14 @@ export default function CommunityScreen() {
               <View style={styles.communityNameRow}>
                 <Text style={styles.communityName}>{community.name}</Text>
                 {community.isVerified && (
-                  <Ionicons name="checkmark-circle" size={14} color={COLORS.info} />
+                  <Ionicons name="checkmark-circle" size={15} color={COLORS.info} />
                 )}
               </View>
               <View style={styles.communityMeta}>
                 <Badge label={community.category} variant="info" size="sm" />
                 <View style={styles.memberCount}>
-                  <Ionicons name="people-outline" size={11} color={COLORS.textLight} />
-                  <Text style={styles.memberText}>{community.members.toLocaleString()}</Text>
+                  <Ionicons name="people-outline" size={12} color={COLORS.textLight} />
+                  <Text style={styles.memberText}>{community.members.toLocaleString()} members</Text>
                 </View>
               </View>
               <Text style={styles.communityDesc} numberOfLines={2}>{community.description}</Text>
@@ -105,43 +105,41 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.sm,
+    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.md,
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.5 },
+  headerTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.6 },
   createBtn: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: COLORS.primary,
-    alignItems: 'center', justifyContent: 'center',
+    width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary,
+    alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm,
   },
   searchBar: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, marginHorizontal: SPACING.lg,
-    marginTop: SPACING.md, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.md, paddingVertical: 14,
-    gap: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, marginHorizontal: SPACING.lg,
+    marginTop: SPACING.sm, borderRadius: BORDER_RADIUS.xl, paddingHorizontal: SPACING.lg, paddingVertical: 16,
+    gap: SPACING.md, ...SHADOWS.sm,
   },
-  searchPlaceholder: { fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textLight, flex: 1 },
+  searchPlaceholder: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, flex: 1 },
   tabRow: {
-    flexDirection: 'row', backgroundColor: COLORS.card, marginHorizontal: SPACING.lg, marginTop: SPACING.md,
+    flexDirection: 'row', backgroundColor: COLORS.surface, marginHorizontal: SPACING.lg, marginTop: SPACING.md,
     borderRadius: BORDER_RADIUS.xl, padding: 4, ...SHADOWS.sm,
   },
-  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: BORDER_RADIUS.xl },
+  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: BORDER_RADIUS.xl },
   tabBtnActive: { backgroundColor: COLORS.primary + '12' },
-  tabBtnText: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.textLight },
+  tabBtnText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textLight },
   tabBtnTextActive: { color: COLORS.primary, fontFamily: FONTS.bold },
   content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
   communityCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md, marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.md,
   },
-  communityIcon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
-  communityInitial: { fontSize: 22, fontFamily: FONTS.bold },
+  communityIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  communityInitial: { fontSize: 24, fontFamily: FONTS.bold },
   communityInfo: { flex: 1, marginLeft: SPACING.md },
-  communityNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-  communityName: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text },
-  communityMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+  communityNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 },
+  communityName: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text, letterSpacing: -0.2 },
+  communityMeta: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
   memberCount: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  memberText: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.textLight },
-  communityDesc: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight, lineHeight: 17 },
+  memberText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight },
+  communityDesc: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, lineHeight: 20 },
   communityAction: { marginLeft: SPACING.sm },
 });

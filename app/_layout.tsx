@@ -4,13 +4,12 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator, StyleSheet, Text, Platform } from 'react-native';
 import { useFonts } from 'expo-font';
 import {
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-  Inter_900Black,
-} from '@expo-google-fonts/inter';
+  PlusJakartaSans_400Regular,
+  PlusJakartaSans_500Medium,
+  PlusJakartaSans_600SemiBold,
+  PlusJakartaSans_700Bold,
+  PlusJakartaSans_800ExtraBold,
+} from '@expo-google-fonts/plus-jakarta-sans';
 import { useAuthStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
@@ -18,27 +17,35 @@ import { supabase } from '@/lib/supabase';
 const FOCUS_CSS = `
   *:focus-visible {
     outline: 3px solid ${COLORS.primary};
-    outline-offset: 2px;
-    border-radius: 4px;
+    outline-offset: 3px;
+    border-radius: 8px;
+    transition: outline-offset 0.15s ease;
   }
   input:focus-visible {
     outline: none;
     border-color: ${COLORS.primary} !important;
-    box-shadow: 0 0 0 3px rgba(232, 67, 147, 0.2);
+    box-shadow: 0 0 0 4px rgba(179, 36, 100, 0.15);
   }
   [role="button"]:focus-visible,
   button:focus-visible {
     outline: 3px solid ${COLORS.primary};
-    outline-offset: 2px;
+    outline-offset: 3px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 `;
 
-function injectFocusStyles() {
+function injectGlobalStyles() {
   if (Platform.OS !== 'web') return;
   if (typeof document === 'undefined') return;
-  if (document.getElementById('isizuo-focus-styles')) return;
+  if (document.getElementById('isizuo-global-styles')) return;
   const style = document.createElement('style');
-  style.id = 'isizuo-focus-styles';
+  style.id = 'isizuo-global-styles';
   style.textContent = FOCUS_CSS;
   document.head.appendChild(style);
 }
@@ -76,16 +83,15 @@ export default function RootLayout() {
   const [ready, setReady] = useState(false);
 
   const [fontsLoaded] = useFonts({
-    Inter_400Regular,
-    Inter_500Medium,
-    Inter_600SemiBold,
-    Inter_700Bold,
-    Inter_800ExtraBold,
-    Inter_900Black,
+    PlusJakartaSans_400Regular,
+    PlusJakartaSans_500Medium,
+    PlusJakartaSans_600SemiBold,
+    PlusJakartaSans_700Bold,
+    PlusJakartaSans_800ExtraBold,
   });
 
   useEffect(() => {
-    injectFocusStyles();
+    injectGlobalStyles();
     const timeout = setTimeout(() => setReady(true), 2000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -150,27 +156,27 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
   },
   loadingLogo: {
-    width: 72,
-    height: 72,
-    borderRadius: 20,
+    width: 80,
+    height: 80,
+    borderRadius: 24,
     backgroundColor: COLORS.primary,
     alignItems: 'center',
     justifyContent: 'center',
   },
   loadingLogoI: {
-    fontSize: 36,
-    fontFamily: 'Inter_900Black',
+    fontSize: 40,
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     color: COLORS.textInverse,
     marginTop: -2,
   },
   loadingText: {
-    fontFamily: 'Inter_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     color: COLORS.text,
-    marginTop: 16,
-    fontSize: 24,
-    letterSpacing: -0.5,
+    marginTop: 18,
+    fontSize: 28,
+    letterSpacing: -0.8,
   },
   loadingSpinner: {
-    marginTop: 20,
+    marginTop: 24,
   },
 });

@@ -36,8 +36,8 @@ export default function MatchesScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Isizuo</Text>
         </View>
-        <TouchableOpacity style={styles.settingsBtn} accessibilityRole="button" accessibilityLabel="Notifications">
-          <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
+        <TouchableOpacity style={styles.notifBtn} accessibilityRole="button" accessibilityLabel="Notifications">
+          <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
           <View style={styles.notifDot} />
         </TouchableOpacity>
       </View>
@@ -65,11 +65,9 @@ export default function MatchesScreen() {
               <Badge label="6 new" variant="success" icon="sparkles" />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newMatchesScroll}>
-              {SAMPLE_MATCHES.slice(0, 3).map((m) => (
-                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`New match: ${m.name}`}>
-                  <View style={styles.newMatchAvatarWrap}>
-                    <Avatar name={m.name} size={68} isVerified={m.isVerified} colorIndex={parseInt(m.id)} />
-                  </View>
+              {SAMPLE_MATCHES.slice(0, 4).map((m) => (
+                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.9} accessibilityRole="button" accessibilityLabel={`New match: ${m.name}`}>
+                  <Avatar name={m.name} size={72} isVerified={m.isVerified} colorIndex={parseInt(m.id)} />
                   <Text style={styles.newMatchName} numberOfLines={1}>{m.name}</Text>
                   <Text style={styles.newMatchTime}>{m.lastActive}</Text>
                 </TouchableOpacity>
@@ -78,17 +76,17 @@ export default function MatchesScreen() {
 
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle} accessibilityRole="header">Recent conversations</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all recent conversations">
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all conversations">
                 <Text style={styles.seeAll}>See all</Text>
               </TouchableOpacity>
             </View>
             {SAMPLE_MATCHES.map((match) => (
-              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`Chat with ${match.name}, ${match.bio}, last active ${match.lastActive}`}>
-                <Avatar name={match.name} size={52} isVerified={match.isVerified} isOnline={Math.random() > 0.5} colorIndex={parseInt(match.id)} />
+              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`Chat with ${match.name}, ${match.bio}, last active ${match.lastActive}`}>
+                <Avatar name={match.name} size={56} isVerified={match.isVerified} isOnline={Math.random() > 0.5} colorIndex={parseInt(match.id)} />
                 <View style={styles.chatInfo}>
                   <View style={styles.chatNameRow}>
                     <Text style={styles.chatName}>{match.name}</Text>
-                    {match.isPremium && <Ionicons name="diamond" size={12} color={COLORS.premium} />}
+                    {match.isPremium && <Ionicons name="diamond" size={13} color={COLORS.premium} />}
                     <Text style={styles.chatTime}>{match.lastActive}</Text>
                   </View>
                   <Text style={styles.chatLastMsg} numberOfLines={1}>{match.bio}</Text>
@@ -98,16 +96,16 @@ export default function MatchesScreen() {
                     ))}
                   </View>
                 </View>
-                <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+                <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
               </TouchableOpacity>
             ))}
           </>
         )}
 
         {activeTab === 'likes' && (
-          <View style={styles.premiumPrompt} accessibilityRole="summary">
+          <View style={styles.premiumPrompt}>
             <View style={styles.premiumIconWrap}>
-              <Ionicons name="star" size={36} color={COLORS.accent} />
+              <Ionicons name="star" size={40} color={COLORS.accent} />
             </View>
             <Text style={styles.premiumTitle} accessibilityRole="header">{t('likes_received')}</Text>
             <Text style={styles.premiumDesc}>
@@ -118,9 +116,9 @@ export default function MatchesScreen() {
         )}
 
         {activeTab === 'visits' && (
-          <View style={styles.premiumPrompt} accessibilityRole="summary">
+          <View style={styles.premiumPrompt}>
             <View style={styles.premiumIconWrap}>
-              <Ionicons name="eye" size={36} color={COLORS.info} />
+              <Ionicons name="eye" size={40} color={COLORS.info} />
             </View>
             <Text style={styles.premiumTitle} accessibilityRole="header">{t('profile_views')}</Text>
             <Text style={styles.premiumDesc}>
@@ -138,49 +136,46 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.sm,
+    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.md,
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.5 },
-  settingsBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.background, alignItems: 'center', justifyContent: 'center' },
-  notifDot: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4, backgroundColor: COLORS.primary, borderWidth: 1.5, borderColor: COLORS.card },
+  headerTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.6 },
+  notifBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm },
+  notifDot: { position: 'absolute', top: 10, right: 10, width: 9, height: 9, borderRadius: 4.5, backgroundColor: COLORS.primary, borderWidth: 2, borderColor: COLORS.surface },
   tabRow: {
-    flexDirection: 'row', backgroundColor: COLORS.card, marginHorizontal: SPACING.lg, marginTop: SPACING.md,
+    flexDirection: 'row', backgroundColor: COLORS.surface, marginHorizontal: SPACING.lg, marginTop: SPACING.sm,
     borderRadius: BORDER_RADIUS.xl, padding: 4, ...SHADOWS.sm,
   },
-  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: BORDER_RADIUS.xl },
+  tabBtn: { flex: 1, alignItems: 'center', paddingVertical: 12, borderRadius: BORDER_RADIUS.xl },
   tabBtnActive: { backgroundColor: COLORS.primary + '12' },
-  tabBtnText: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.textLight },
+  tabBtnText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textLight },
   tabBtnTextActive: { color: COLORS.primary, fontFamily: FONTS.bold },
   content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md, marginTop: SPACING.sm },
-  sectionTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: COLORS.text },
+  sectionTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: COLORS.text, letterSpacing: -0.3 },
   seeAll: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.primary },
-  newMatchesScroll: { marginBottom: SPACING.lg, marginLeft: -4 },
-  newMatchCard: { alignItems: 'center', marginRight: SPACING.md, width: 84 },
-  newMatchAvatarWrap: { marginBottom: 6 },
-  newMatchName: { fontSize: 12, fontFamily: FONTS.semiBold, color: COLORS.text, textAlign: 'center' },
-  newMatchTime: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 1 },
+  newMatchesScroll: { marginBottom: SPACING.xl, marginLeft: -4 },
+  newMatchCard: { alignItems: 'center', marginRight: SPACING.lg, width: 88 },
+  newMatchName: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.text, textAlign: 'center', marginTop: 8 },
+  newMatchTime: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 2 },
   chatCard: {
-    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md, marginBottom: SPACING.sm, ...SHADOWS.sm,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.lg,
+    padding: SPACING.md, marginBottom: SPACING.sm, ...SHADOWS.md,
   },
   chatInfo: { flex: 1, marginLeft: SPACING.md },
-  chatNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 3 },
+  chatNameRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   chatName: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text },
-  chatTime: { fontSize: 11, fontFamily: FONTS.regular, color: COLORS.textLight, marginLeft: 'auto' },
+  chatTime: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight, marginLeft: 'auto' },
   chatLastMsg: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: 6 },
   interestRow: { flexDirection: 'row', gap: 4 },
   premiumPrompt: {
-    alignItems: 'center', padding: SPACING.xl, backgroundColor: COLORS.card,
-    borderRadius: BORDER_RADIUS.lg, marginTop: SPACING.lg, borderWidth: 1, borderColor: COLORS.border,
+    alignItems: 'center', padding: SPACING.xl, backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.xl, marginTop: SPACING.lg, ...SHADOWS.md,
   },
   premiumIconWrap: {
-    width: 64, height: 64, borderRadius: 32, backgroundColor: COLORS.background,
-    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.md,
+    width: 72, height: 72, borderRadius: 24, backgroundColor: COLORS.background,
+    alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.lg,
   },
-  premiumTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: SPACING.sm },
-  premiumDesc: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 22 },
+  premiumTitle: { fontSize: FONT_SIZES.xxl, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: SPACING.sm, letterSpacing: -0.5 },
+  premiumDesc: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.lg, lineHeight: 24 },
 });

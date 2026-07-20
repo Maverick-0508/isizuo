@@ -36,7 +36,6 @@ export default function LoginScreen() {
         <View style={[styles.circle, styles.circle1]} />
         <View style={[styles.circle, styles.circle2]} />
         <View style={[styles.circle, styles.circle3]} />
-        <View style={[styles.circle, styles.circle4]} />
       </View>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
@@ -111,7 +110,7 @@ export default function LoginScreen() {
             </View>
 
             <TouchableOpacity style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google" accessibilityHint="Sign in using your Google account">
-              <Ionicons name="logo-google" size={20} color="#DB4437" />
+              <Ionicons name="logo-google" size={22} color="#DB4437" />
               <Text style={styles.socialBtnText}>Continue with Google</Text>
             </TouchableOpacity>
 
@@ -125,29 +124,29 @@ export default function LoginScreen() {
 
           <View style={styles.featuresGrid} accessibilityRole="summary">
             <View style={styles.featureCard} accessibilityLabel="Verified Profiles: Every profile is verified for your safety">
-              <View style={[styles.featureIcon, { backgroundColor: '#E8F5E9' }]}>
-                <Ionicons name="shield-checkmark" size={22} color={COLORS.safe} />
+              <View style={[styles.featureIcon, { backgroundColor: '#D4F5ED' }]}>
+                <Ionicons name="shield-checkmark" size={24} color={COLORS.safe} />
               </View>
               <Text style={styles.featureTitle}>Verified Profiles</Text>
               <Text style={styles.featureDesc}>Every profile is verified for your safety</Text>
             </View>
             <View style={styles.featureCard} accessibilityLabel="Community First: Connect through shared cultural roots">
-              <View style={[styles.featureIcon, { backgroundColor: '#E3F2FD' }]}>
-                <Ionicons name="people" size={22} color={COLORS.info} />
+              <View style={[styles.featureIcon, { backgroundColor: '#E0EDFF' }]}>
+                <Ionicons name="people" size={24} color={COLORS.info} />
               </View>
               <Text style={styles.featureTitle}>Community First</Text>
               <Text style={styles.featureDesc}>Connect through shared cultural roots</Text>
             </View>
             <View style={styles.featureCard} accessibilityLabel="Family Values: Find someone who shares your values">
               <View style={[styles.featureIcon, { backgroundColor: '#FCE4EC' }]}>
-                <Ionicons name="heart" size={22} color={COLORS.primary} />
+                <Ionicons name="heart" size={24} color={COLORS.primary} />
               </View>
               <Text style={styles.featureTitle}>Family Values</Text>
               <Text style={styles.featureDesc}>Find someone who shares your values</Text>
             </View>
             <View style={styles.featureCard} accessibilityLabel="Local Events: Meet at events in your city">
-              <View style={[styles.featureIcon, { backgroundColor: '#FFF3E0' }]}>
-                <Ionicons name="location" size={22} color={COLORS.accentDark} />
+              <View style={[styles.featureIcon, { backgroundColor: '#FEF3D6' }]}>
+                <Ionicons name="location" size={24} color={COLORS.accentDark} />
               </View>
               <Text style={styles.featureTitle}>Local Events</Text>
               <Text style={styles.featureDesc}>Meet at events in your city</Text>
@@ -155,7 +154,7 @@ export default function LoginScreen() {
           </View>
 
           <TouchableOpacity style={styles.usdBtn} accessibilityRole="button" accessibilityLabel="Sign in with Phone" accessibilityHint="USSD coming soon">
-            <Ionicons name="call-outline" size={18} color={COLORS.primary} />
+            <Ionicons name="call-outline" size={20} color={COLORS.primary} />
             <Text style={styles.usdText}>Sign in with Phone (USSD coming soon)</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -171,102 +170,102 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primaryHero, overflow: 'hidden',
   },
   circle: { position: 'absolute', borderRadius: 999 },
-  circle1: { width: 350, height: 350, top: -100, right: -80, backgroundColor: COLORS.secondary, opacity: 0.2 },
-  circle2: { width: 200, height: 200, top: 120, left: -50, backgroundColor: COLORS.accent, opacity: 0.15 },
-  circle3: { width: 280, height: 280, top: 250, right: -40, backgroundColor: '#FF6B6B', opacity: 0.12 },
-  circle4: { width: 150, height: 150, top: 50, left: width * 0.3, backgroundColor: '#00B894', opacity: 0.1 },
+  circle1: { width: 400, height: 400, top: -120, right: -100, backgroundColor: COLORS.secondary, opacity: 0.15 },
+  circle2: { width: 250, height: 250, top: 100, left: -60, backgroundColor: COLORS.accent, opacity: 0.12 },
+  circle3: { width: 300, height: 300, top: 280, right: -50, backgroundColor: '#DC3545', opacity: 0.08 },
   keyboardView: { flex: 1 },
-  scrollContent: { flexGrow: 1, paddingHorizontal: SPACING.lg, paddingTop: 70, paddingBottom: SPACING.xxl },
+  scrollContent: { flexGrow: 1, paddingHorizontal: SPACING.lg, paddingTop: 72, paddingBottom: SPACING.xxl },
 
   heroSection: { alignItems: 'center', marginBottom: SPACING.xl },
   logoWrap: { marginBottom: SPACING.lg },
   logoIconBox: {
-    width: 80, height: 80, borderRadius: 22,
+    width: 88, height: 88, borderRadius: 26,
     backgroundColor: 'rgba(255,255,255,0.15)',
     alignItems: 'center', justifyContent: 'center',
     borderWidth: 2, borderColor: 'rgba(255,255,255,0.25)',
   },
   logoLetter: {
-    fontSize: 44, fontFamily: FONTS.black,
+    fontSize: 48, fontFamily: FONTS.extraBold,
     color: COLORS.textInverse, marginTop: -3,
   },
   heroTitle: {
-    fontSize: 48, fontFamily: FONTS.black,
-    color: COLORS.textInverse, letterSpacing: -1.5, marginBottom: 4,
+    fontSize: 52, fontFamily: FONTS.extraBold,
+    color: COLORS.textInverse, letterSpacing: -2, marginBottom: 6,
   },
   heroTagline: {
-    fontSize: 16, fontFamily: FONTS.semiBold,
-    color: '#FFFFFF', letterSpacing: 1, textTransform: 'uppercase',
+    fontSize: 17, fontFamily: FONTS.semiBold,
+    color: '#FFFFFF', letterSpacing: 1.5, textTransform: 'uppercase',
     marginBottom: SPACING.md,
   },
   heroSubtitle: {
-    fontSize: 15, fontFamily: FONTS.regular,
-    color: '#FFFFFF', textAlign: 'center',
-    lineHeight: 22, paddingHorizontal: SPACING.md, maxWidth: 380,
+    fontSize: 16, fontFamily: FONTS.regular,
+    color: 'rgba(255,255,255,0.88)', textAlign: 'center',
+    lineHeight: 24, paddingHorizontal: SPACING.md, maxWidth: 380,
   },
 
   statsRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: BORDER_RADIUS.lg, paddingVertical: 16, paddingHorizontal: SPACING.lg,
+    borderRadius: BORDER_RADIUS.xl, paddingVertical: 18, paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.xl, gap: 0,
+    backdropFilter: 'blur(10px)',
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statValue: { fontSize: 22, fontFamily: FONTS.black, color: '#FFFFFF' },
-  statLabel: { fontSize: 11, fontFamily: FONTS.medium, color: '#FFFFFF', marginTop: 2 },
-  statDivider: { width: 1, height: 32, backgroundColor: 'rgba(255,255,255,0.25)' },
+  statValue: { fontSize: 24, fontFamily: FONTS.extraBold, color: '#FFFFFF', letterSpacing: -0.5 },
+  statLabel: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.8)', marginTop: 3 },
+  statDivider: { width: 1, height: 36, backgroundColor: 'rgba(255,255,255,0.2)' },
 
   formCard: {
-    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg,
-    marginBottom: SPACING.lg, ...SHADOWS.md,
+    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl,
+    marginBottom: SPACING.lg, ...SHADOWS.lg,
   },
-  formTitle: { fontSize: 22, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 4 },
-  formDesc: { fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: SPACING.lg, lineHeight: 20 },
+  formTitle: { fontSize: FONT_SIZES.xxl, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 6, letterSpacing: -0.5 },
+  formDesc: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: SPACING.lg, lineHeight: 24 },
   inputContainer: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.background,
-    borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING.md, paddingVertical: 16,
-    marginBottom: SPACING.md, gap: SPACING.sm, borderWidth: 1.5, borderColor: COLORS.border,
+    borderRadius: BORDER_RADIUS.lg, paddingHorizontal: SPACING.lg, paddingVertical: 18,
+    marginBottom: SPACING.md, gap: SPACING.md, borderWidth: 2, borderColor: COLORS.border,
   },
-  input: { flex: 1, fontSize: 15, fontFamily: FONTS.regular, color: COLORS.text },
+  input: { flex: 1, fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.text },
 
   dividerRow: {
     flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.lg, gap: SPACING.md,
   },
   dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: { fontSize: 13, fontFamily: FONTS.medium, color: COLORS.textLight },
+  dividerText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.medium, color: COLORS.textLight },
 
   socialBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    paddingVertical: 14, borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1.5, borderColor: COLORS.border, backgroundColor: COLORS.background,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
+    paddingVertical: 16, borderRadius: BORDER_RADIUS.lg,
+    borderWidth: 2, borderColor: COLORS.border, backgroundColor: COLORS.background,
   },
-  socialBtnText: { fontSize: 15, fontFamily: FONTS.semiBold, color: COLORS.text },
+  socialBtnText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text },
 
   terms: {
-    fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight,
-    textAlign: 'center', marginTop: SPACING.lg, lineHeight: 18,
+    fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight,
+    textAlign: 'center', marginTop: SPACING.lg, lineHeight: 20,
   },
   termsLink: { fontFamily: FONTS.semiBold, color: COLORS.primary },
 
   featuresGrid: {
-    flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, marginBottom: SPACING.lg,
+    flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.md, marginBottom: SPACING.lg,
   },
   featureCard: {
-    width: (width - SPACING.lg * 2 - SPACING.sm) / 2,
-    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, padding: SPACING.md,
-    borderWidth: 1, borderColor: COLORS.border,
+    width: (width - SPACING.lg * 2 - SPACING.md) / 2,
+    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg,
+    ...SHADOWS.sm,
   },
   featureIcon: {
-    width: 40, height: 40, borderRadius: 12,
-    alignItems: 'center', justifyContent: 'center', marginBottom: 10,
+    width: 44, height: 44, borderRadius: 14,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 12,
   },
-  featureTitle: { fontSize: 14, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 3 },
-  featureDesc: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight, lineHeight: 17 },
+  featureTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 4, letterSpacing: -0.2 },
+  featureDesc: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, lineHeight: 20 },
 
   usdBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    paddingVertical: 14, backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 1.5, borderColor: COLORS.border,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
+    paddingVertical: 16, backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl,
+    ...SHADOWS.sm,
   },
-  usdText: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.primary },
+  usdText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.primary },
 });

@@ -36,15 +36,15 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <Logo size="sm" showText={false} />
         <View style={styles.headerCenter}>
-          <Text style={styles.headerTitle}>{t('settings')}</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">{t('settings')}</Text>
         </View>
-        <View style={{ width: 36 }} />
+        <View style={{ width: 44 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard} accessibilityRole="region" accessibilityLabel="User profile">
           <View style={styles.avatarWrap}>
-            <Avatar name={user?.name || 'User'} size={88} isVerified={true} colorIndex={0} />
+            <Avatar name={user?.name || 'User'} size={96} isVerified={true} colorIndex={0} />
           </View>
           <Text style={styles.userName} accessibilityRole="header">{user?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email || 'user@email.com'}</Text>
@@ -74,12 +74,12 @@ export default function ProfileScreen() {
 
         <View style={styles.menuSection} accessibilityRole="menu">
           {menuItems.map((item) => (
-            <TouchableOpacity key={item.label} style={styles.menuItem} activeOpacity={0.7} accessibilityRole="menuitem" accessibilityLabel={item.label}>
+            <TouchableOpacity key={item.label} style={styles.menuItem} activeOpacity={0.8} accessibilityRole="menuitem" accessibilityLabel={item.label}>
               <View style={[styles.menuIcon, { backgroundColor: item.color + '12' }]}>
-                <Ionicons name={item.icon as any} size={18} color={item.color} />
+                <Ionicons name={item.icon as any} size={20} color={item.color} />
               </View>
               <Text style={styles.menuLabel}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={16} color={COLORS.textLight} />
+              <Ionicons name="chevron-forward" size={18} color={COLORS.textLight} />
             </TouchableOpacity>
           ))}
         </View>
@@ -110,7 +110,7 @@ export default function ProfileScreen() {
         </View>
 
         <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sign out of your account">
-          <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
+          <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
           <Text style={styles.signOutText}>{t('sign_out')}</Text>
         </TouchableOpacity>
 
@@ -124,54 +124,52 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.sm,
-    backgroundColor: COLORS.card, borderBottomLeftRadius: BORDER_RADIUS.xl, borderBottomRightRadius: BORDER_RADIUS.xl,
-    ...SHADOWS.sm,
+    paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.md,
   },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontSize: 20, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.5 },
+  headerTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.6 },
   content: { flex: 1, paddingHorizontal: SPACING.lg, paddingTop: SPACING.md },
   profileCard: {
-    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, padding: SPACING.lg,
-    alignItems: 'center', marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl,
+    alignItems: 'center', marginBottom: SPACING.md, ...SHADOWS.md,
   },
-  avatarWrap: { marginBottom: SPACING.md },
-  userName: { fontSize: 22, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 2 },
-  userEmail: { fontSize: 14, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: SPACING.md },
-  badgeRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.md },
+  avatarWrap: { marginBottom: SPACING.lg },
+  userName: { fontSize: FONT_SIZES.xxl, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 4, letterSpacing: -0.5 },
+  userEmail: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: SPACING.md },
+  badgeRow: { flexDirection: 'row', gap: SPACING.sm, marginBottom: SPACING.lg },
   statsRow: {
-    flexDirection: 'row', backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
-    padding: SPACING.md, marginBottom: SPACING.md, borderWidth: 1, borderColor: COLORS.border,
+    flexDirection: 'row', backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl,
+    padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.md,
   },
   statItem: { flex: 1, alignItems: 'center' },
   statDivider: { width: 1, height: '100%', backgroundColor: COLORS.border },
-  statValue: { fontSize: 24, fontFamily: FONTS.black, color: COLORS.primary },
-  statLabel: { fontSize: 12, fontFamily: FONTS.medium, color: COLORS.textLight, marginTop: 2 },
+  statValue: { fontSize: 28, fontFamily: FONTS.extraBold, color: COLORS.primary, letterSpacing: -0.5 },
+  statLabel: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.medium, color: COLORS.textLight, marginTop: 4 },
   menuSection: {
-    backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg, marginBottom: SPACING.md,
-    borderWidth: 1, borderColor: COLORS.border, overflow: 'hidden',
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, marginBottom: SPACING.md,
+    overflow: 'hidden', ...SHADOWS.sm,
   },
   menuItem: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: 14, paddingHorizontal: SPACING.md,
+    flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: SPACING.lg,
     borderBottomWidth: 1, borderBottomColor: COLORS.border,
   },
-  menuIcon: { width: 32, height: 32, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  menuLabel: { flex: 1, fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.text, marginLeft: SPACING.sm },
+  menuIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  menuLabel: { flex: 1, fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text, marginLeft: SPACING.md },
   languageSection: { marginBottom: SPACING.md },
-  languageTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: SPACING.sm },
+  languageTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: SPACING.md, letterSpacing: -0.3 },
   languageGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   langPill: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: BORDER_RADIUS.full,
-    backgroundColor: COLORS.card, borderWidth: 1.5, borderColor: COLORS.border,
+    paddingHorizontal: 18, paddingVertical: 10, borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.surface, ...SHADOWS.sm,
   },
-  langPillActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-  langPillText: { fontSize: 13, fontFamily: FONTS.semiBold, color: COLORS.textLight },
+  langPillActive: { backgroundColor: COLORS.primary },
+  langPillText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textLight },
   langPillTextActive: { color: COLORS.textInverse },
   signOutBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.sm,
-    paddingVertical: 14, backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.lg,
-    marginBottom: SPACING.md, borderWidth: 1.5, borderColor: COLORS.border,
+    paddingVertical: 16, backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl,
+    marginBottom: SPACING.md, ...SHADOWS.sm,
   },
-  signOutText: { fontSize: 14, fontFamily: FONTS.semiBold, color: COLORS.danger },
-  version: { fontSize: 12, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.xl },
+  signOutText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.danger },
+  version: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.xl },
 });
