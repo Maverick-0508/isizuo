@@ -36,18 +36,21 @@ export default function MatchesScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Isizuo</Text>
         </View>
-        <TouchableOpacity style={styles.settingsBtn}>
+        <TouchableOpacity style={styles.settingsBtn} accessibilityRole="button" accessibilityLabel="Notifications">
           <Ionicons name="notifications-outline" size={20} color={COLORS.text} />
           <View style={styles.notifDot} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.tabRow}>
+      <View style={styles.tabRow} accessibilityRole="tablist">
         {tabs.map((tab) => (
           <TouchableOpacity
             key={tab.key}
             style={[styles.tabBtn, activeTab === tab.key && styles.tabBtnActive]}
             onPress={() => setActiveTab(tab.key)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: activeTab === tab.key }}
+            accessibilityLabel={tab.label}
           >
             <Text style={[styles.tabBtnText, activeTab === tab.key && styles.tabBtnTextActive]}>{tab.label}</Text>
           </TouchableOpacity>
@@ -58,12 +61,12 @@ export default function MatchesScreen() {
         {activeTab === 'matches' && (
           <>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t('new_matches')}</Text>
+              <Text style={styles.sectionTitle} accessibilityRole="header">{t('new_matches')}</Text>
               <Badge label="6 new" variant="success" icon="sparkles" />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newMatchesScroll}>
               {SAMPLE_MATCHES.slice(0, 3).map((m) => (
-                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.85}>
+                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`New match: ${m.name}`}>
                   <View style={styles.newMatchAvatarWrap}>
                     <Avatar name={m.name} size={68} isVerified={m.isVerified} colorIndex={parseInt(m.id)} />
                   </View>
@@ -74,13 +77,13 @@ export default function MatchesScreen() {
             </ScrollView>
 
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>Recent conversations</Text>
-              <TouchableOpacity>
+              <Text style={styles.sectionTitle} accessibilityRole="header">Recent conversations</Text>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel="See all recent conversations">
                 <Text style={styles.seeAll}>See all</Text>
               </TouchableOpacity>
             </View>
             {SAMPLE_MATCHES.map((match) => (
-              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.85}>
+              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`Chat with ${match.name}, ${match.bio}, last active ${match.lastActive}`}>
                 <Avatar name={match.name} size={52} isVerified={match.isVerified} isOnline={Math.random() > 0.5} colorIndex={parseInt(match.id)} />
                 <View style={styles.chatInfo}>
                   <View style={styles.chatNameRow}>
@@ -102,11 +105,11 @@ export default function MatchesScreen() {
         )}
 
         {activeTab === 'likes' && (
-          <View style={styles.premiumPrompt}>
+          <View style={styles.premiumPrompt} accessibilityRole="summary">
             <View style={styles.premiumIconWrap}>
               <Ionicons name="star" size={36} color={COLORS.accent} />
             </View>
-            <Text style={styles.premiumTitle}>{t('likes_received')}</Text>
+            <Text style={styles.premiumTitle} accessibilityRole="header">{t('likes_received')}</Text>
             <Text style={styles.premiumDesc}>
               Upgrade to see who liked your profile. Get unlimited swipes and more!
             </Text>
@@ -115,11 +118,11 @@ export default function MatchesScreen() {
         )}
 
         {activeTab === 'visits' && (
-          <View style={styles.premiumPrompt}>
+          <View style={styles.premiumPrompt} accessibilityRole="summary">
             <View style={styles.premiumIconWrap}>
               <Ionicons name="eye" size={36} color={COLORS.info} />
             </View>
-            <Text style={styles.premiumTitle}>{t('profile_views')}</Text>
+            <Text style={styles.premiumTitle} accessibilityRole="header">{t('profile_views')}</Text>
             <Text style={styles.premiumDesc}>
               See who viewed your profile in the last 30 days. Get premium to unlock this feature.
             </Text>
