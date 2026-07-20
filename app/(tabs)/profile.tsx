@@ -15,20 +15,20 @@ export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
 
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Sign Out', style: 'destructive', onPress: async () => { await signOut(); router.replace('/(auth)'); } },
+    Alert.alert(t('sign_out'), t('confirm'), [
+      { text: t('cancel'), style: 'cancel' },
+      { text: t('sign_out'), style: 'destructive', onPress: async () => { await signOut(); router.replace('/(auth)'); } },
     ]);
   };
 
   const menuItems = [
-    { icon: 'person-outline', label: t('edit_profile'), color: COLORS.primary },
-    { icon: 'shield-outline', label: t('safety_settings'), color: COLORS.safe },
-    { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info },
-    { icon: 'diamond-outline', label: t('subscription'), color: COLORS.premium },
-    { icon: 'language-outline', label: t('language'), color: COLORS.secondary },
-    { icon: 'help-circle-outline', label: t('help'), color: COLORS.accent },
-    { icon: 'document-text-outline', label: t('legal'), color: COLORS.textLight },
+    { icon: 'person-outline', label: t('edit_profile'), color: COLORS.primary, route: '/(tabs)/profile' },
+    { icon: 'shield-outline', label: t('safety_settings'), color: COLORS.safe, route: null },
+    { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info, route: null },
+    { icon: 'diamond-outline', label: t('subscription'), color: COLORS.premium, route: null },
+    { icon: 'language-outline', label: t('language'), color: COLORS.secondary, route: null },
+    { icon: 'help-circle-outline', label: t('help'), color: COLORS.accent, route: null },
+    { icon: 'document-text-outline', label: t('legal'), color: COLORS.textLight, route: null },
   ];
 
   return (
@@ -49,8 +49,8 @@ export default function ProfileScreen() {
           <Text style={styles.userName} accessibilityRole="header">{user?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email || 'user@email.com'}</Text>
           <View style={styles.badgeRow}>
-            <Badge label="Verified" variant="info" icon="checkmark-circle" />
-            <Badge label="Gold Member" variant="premium" icon="diamond" />
+            <Badge label={t('verified')} variant="info" icon="checkmark-circle" />
+            <Badge label={t('premium_badge')} variant="premium" icon="diamond" />
           </View>
           <Button title={t('edit_profile')} variant="outline" size="sm" icon="create-outline" onPress={() => {}} fullWidth />
         </View>
@@ -74,7 +74,18 @@ export default function ProfileScreen() {
 
         <View style={styles.menuSection} accessibilityRole="menu">
           {menuItems.map((item) => (
-            <TouchableOpacity key={item.label} style={styles.menuItem} activeOpacity={0.8} accessibilityRole="menuitem" accessibilityLabel={item.label}>
+            <TouchableOpacity
+              key={item.label}
+              style={styles.menuItem}
+              activeOpacity={0.8}
+              accessibilityRole="menuitem"
+              accessibilityLabel={item.label}
+              onPress={() => {
+                if (item.route) {
+                  router.push(item.route);
+                }
+              }}
+            >
               <View style={[styles.menuIcon, { backgroundColor: item.color + '12' }]}>
                 <Ionicons name={item.icon as any} size={20} color={item.color} />
               </View>
@@ -109,7 +120,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sign out of your account">
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} accessibilityRole="button" accessibilityLabel={t('sign_out')}>
           <Ionicons name="log-out-outline" size={20} color={COLORS.danger} />
           <Text style={styles.signOutText}>{t('sign_out')}</Text>
         </TouchableOpacity>
