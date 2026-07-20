@@ -32,26 +32,32 @@ export default function CommunityScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>{t('communities')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn}>
+        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel="Create community">
           <Ionicons name="add" size={22} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.searchBar}>
+      <View style={styles.searchBar} accessibilityRole="search">
         <Ionicons name="search" size={18} color={COLORS.textLight} />
         <Text style={styles.searchPlaceholder}>Search communities...</Text>
       </View>
 
-      <View style={styles.tabRow}>
+      <View style={styles.tabRow} accessibilityRole="tablist">
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === 'discover' && styles.tabBtnActive]}
           onPress={() => setActiveTab('discover')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'discover' }}
+          accessibilityLabel="Discover communities"
         >
           <Text style={[styles.tabBtnText, activeTab === 'discover' && styles.tabBtnTextActive]}>Discover</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tabBtn, activeTab === 'joined' && styles.tabBtnActive]}
           onPress={() => setActiveTab('joined')}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: activeTab === 'joined' }}
+          accessibilityLabel={`Joined communities (${SAMPLE_COMMUNITIES.filter(c => c.isJoined).length})`}
         >
           <Text style={[styles.tabBtnText, activeTab === 'joined' && styles.tabBtnTextActive]}>Joined ({SAMPLE_COMMUNITIES.filter(c => c.isJoined).length})</Text>
         </TouchableOpacity>
@@ -59,7 +65,7 @@ export default function CommunityScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {filteredCommunities.map((community) => (
-          <TouchableOpacity key={community.id} style={styles.communityCard} activeOpacity={0.85}>
+          <TouchableOpacity key={community.id} style={styles.communityCard} activeOpacity={0.85} accessibilityRole="button" accessibilityLabel={`${community.name}, ${community.members} members. ${community.description}`}>
             <View style={[styles.communityIcon, { backgroundColor: community.color + '15' }]}>
               <Text style={[styles.communityInitial, { color: community.color }]}>
                 {community.name.charAt(0)}
