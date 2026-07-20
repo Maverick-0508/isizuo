@@ -76,12 +76,22 @@ interface AvatarProps {
 
 const AVATAR_COLORS = ['#E84393', '#6C5CE7', '#00B894', '#FDCB6E', '#FF6B6B', '#74B9FF', '#A29BFE', '#55EFC4'];
 
+function getContrastColor(bg: string): string {
+  const hex = bg.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+  return luminance > 0.55 ? '#1A1A2E' : '#FFFFFF';
+}
+
 export function Avatar({ uri, size = 48, isVerified = false, isOnline, name, colorIndex = 0 }: AvatarProps) {
   const bgColor = AVATAR_COLORS[colorIndex % AVATAR_COLORS.length];
+  const textColor = getContrastColor(bgColor);
   const initials = name ? name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : '';
   return (
     <View style={[styles.avatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: bgColor }]}>
-      <Text style={[styles.avatarText, { fontSize: size / 2.8 }]}>{initials || '?'}</Text>
+      <Text style={[styles.avatarText, { fontSize: size / 2.8, color: textColor }]}>{initials || '?'}</Text>
       {isVerified && (
         <View style={[styles.verifiedBadge, { bottom: -2, right: -2, width: size > 40 ? 20 : 14, height: size > 40 ? 20 : 14, borderRadius: size > 40 ? 10 : 7 }]}>
           <Ionicons name="checkmark" size={size > 40 ? 11 : 8} color={COLORS.textInverse} />
