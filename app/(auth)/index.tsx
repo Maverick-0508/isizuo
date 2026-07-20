@@ -17,15 +17,17 @@ export default function LoginScreen() {
   const { signIn } = useAuthStore();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSendOTP = async () => {
     if (!email.trim()) return;
+    setError('');
     setIsLoading(true);
     try {
       await signIn(email.trim());
       router.replace('/(tabs)');
-    } catch (error) {
-      console.error('Login error:', error);
+    } catch (err) {
+      setError(t('error'));
     } finally {
       setIsLoading(false);
     }
@@ -54,32 +56,32 @@ export default function LoginScreen() {
               </View>
             </View>
             <Text style={styles.heroTitle} accessibilityRole="header">Isizuo</Text>
-            <Text style={styles.heroTagline}>Date. Connect. Belong.</Text>
+            <Text style={styles.heroTagline}>{t('hero_tagline')}</Text>
             <Text style={styles.heroSubtitle}>
-              The dating app built for African singles. Find meaningful connections rooted in culture, community, and values.
+              {t('hero_subtitle')}
             </Text>
           </View>
 
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>50K+</Text>
-              <Text style={styles.statLabel}>Active Users</Text>
+              <Text style={styles.statLabel}>{t('active_users')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>20+</Text>
-              <Text style={styles.statLabel}>Communities</Text>
+              <Text style={styles.statLabel}>{t('communities_count')}</Text>
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
               <Text style={styles.statValue}>4.8</Text>
-              <Text style={styles.statLabel}>App Rating</Text>
+              <Text style={styles.statLabel}>{t('app_rating')}</Text>
             </View>
           </View>
 
           <View style={styles.formCard}>
-            <Text style={styles.formTitle} accessibilityRole="header">Get started</Text>
-            <Text style={styles.formDesc}>Enter your email to create an account or sign in</Text>
+            <Text style={styles.formTitle} accessibilityRole="header">{t('get_started')}</Text>
+            <Text style={styles.formDesc}>{t('email_description')}</Text>
 
             <View style={styles.inputContainer} accessibilityRole="form">
               <Ionicons name="mail-outline" size={20} color={COLORS.textLight} />
@@ -88,19 +90,26 @@ export default function LoginScreen() {
                 placeholder="you@example.com"
                 placeholderTextColor={COLORS.textLight}
                 value={email}
-                onChangeText={setEmail}
+                onChangeText={(text) => { setEmail(text); setError(''); }}
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoCorrect={false}
-                accessibilityLabel="Email address"
-                accessibilityHint="Enter your email to sign in or create an account"
+                accessibilityLabel={t('name')}
+                accessibilityHint={t('email_description')}
                 textContentType="emailAddress"
                 autoComplete="email"
               />
             </View>
 
+            {error ? (
+              <View style={styles.errorRow}>
+                <Ionicons name="alert-circle" size={16} color={COLORS.danger} />
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            ) : null}
+
             <Button
-              title="Continue with Email"
+              title={t('continue_with_email')}
               onPress={handleSendOTP}
               variant="gradient"
               size="lg"
@@ -112,57 +121,57 @@ export default function LoginScreen() {
 
             <View style={styles.dividerRow}>
               <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
+              <Text style={styles.dividerText}>{t('or')}</Text>
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.socialBtn} accessibilityRole="button" accessibilityLabel="Continue with Google" accessibilityHint="Sign in using your Google account">
+            <TouchableOpacity style={styles.socialBtn} accessibilityRole="button" accessibilityLabel={t('continue_with_google')} accessibilityHint={t('email_description')}>
               <Ionicons name="logo-google" size={22} color="#DB4437" />
-              <Text style={styles.socialBtnText}>Continue with Google</Text>
+              <Text style={styles.socialBtnText}>{t('continue_with_google')}</Text>
             </TouchableOpacity>
 
             <Text style={styles.terms}>
-              By continuing, you agree to our{' '}
-              <Text style={styles.termsLink}>Terms of Service</Text>
-              {' '}and{' '}
-              <Text style={styles.termsLink}>Privacy Policy</Text>
+              {t('by_continuing')}{' '}
+              <Text style={styles.termsLink}>{t('terms_of_service')}</Text>
+              {' '}{t('and')}{' '}
+              <Text style={styles.termsLink}>{t('privacy_policy')}</Text>
             </Text>
           </View>
 
           <View style={styles.featuresGrid} accessibilityRole="summary">
-            <View style={styles.featureCard} accessibilityLabel="Verified Profiles: Every profile is verified for your safety">
+            <View style={styles.featureCard} accessibilityLabel={t('verified_profiles')}>
               <View style={[styles.featureIcon, { backgroundColor: '#D4F5ED' }]}>
                 <Ionicons name="shield-checkmark" size={24} color={COLORS.safe} />
               </View>
-              <Text style={styles.featureTitle}>Verified Profiles</Text>
-              <Text style={styles.featureDesc}>Every profile is verified for your safety</Text>
+              <Text style={styles.featureTitle}>{t('verified_profiles')}</Text>
+              <Text style={styles.featureDesc}>{t('verified_profiles_desc')}</Text>
             </View>
-            <View style={styles.featureCard} accessibilityLabel="Community First: Connect through shared cultural roots">
+            <View style={styles.featureCard} accessibilityLabel={t('community_first')}>
               <View style={[styles.featureIcon, { backgroundColor: '#E0EDFF' }]}>
                 <Ionicons name="people" size={24} color={COLORS.info} />
               </View>
-              <Text style={styles.featureTitle}>Community First</Text>
-              <Text style={styles.featureDesc}>Connect through shared cultural roots</Text>
+              <Text style={styles.featureTitle}>{t('community_first')}</Text>
+              <Text style={styles.featureDesc}>{t('community_first_desc')}</Text>
             </View>
-            <View style={styles.featureCard} accessibilityLabel="Family Values: Find someone who shares your values">
+            <View style={styles.featureCard} accessibilityLabel={t('family_values_title')}>
               <View style={[styles.featureIcon, { backgroundColor: '#FCE4EC' }]}>
                 <Ionicons name="heart" size={24} color={COLORS.primary} />
               </View>
-              <Text style={styles.featureTitle}>Family Values</Text>
-              <Text style={styles.featureDesc}>Find someone who shares your values</Text>
+              <Text style={styles.featureTitle}>{t('family_values_title')}</Text>
+              <Text style={styles.featureDesc}>{t('family_values_desc')}</Text>
             </View>
-            <View style={styles.featureCard} accessibilityLabel="Local Events: Meet at events in your city">
+            <View style={styles.featureCard} accessibilityLabel={t('local_events')}>
               <View style={[styles.featureIcon, { backgroundColor: '#FEF3D6' }]}>
                 <Ionicons name="location" size={24} color={COLORS.accentDark} />
               </View>
-              <Text style={styles.featureTitle}>Local Events</Text>
-              <Text style={styles.featureDesc}>Meet at events in your city</Text>
+              <Text style={styles.featureTitle}>{t('local_events')}</Text>
+              <Text style={styles.featureDesc}>{t('local_events_desc')}</Text>
             </View>
           </View>
 
-          <TouchableOpacity style={styles.usdBtn} accessibilityRole="button" accessibilityLabel="Sign in with Phone" accessibilityHint="USSD coming soon">
+          <TouchableOpacity style={styles.usdBtn} accessibilityRole="button" accessibilityLabel={t('sign_in_phone')}>
             <Ionicons name="call-outline" size={20} color={COLORS.primary} />
-            <Text style={styles.usdText}>Sign in with Phone (USSD coming soon)</Text>
+            <Text style={styles.usdText}>{t('sign_in_phone')}</Text>
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -233,6 +242,10 @@ const styles = StyleSheet.create({
     marginBottom: SPACING.md, gap: SPACING.md, borderWidth: 2, borderColor: COLORS.border,
   },
   input: { flex: 1, fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.text },
+  errorRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: SPACING.md,
+  },
+  errorText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.medium, color: COLORS.danger },
 
   dividerRow: {
     flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.lg, gap: SPACING.md,
