@@ -42,11 +42,11 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileCard}>
+        <View style={styles.profileCard} accessibilityRole="region" accessibilityLabel="User profile">
           <View style={styles.avatarWrap}>
             <Avatar name={user?.name || 'User'} size={88} isVerified={true} colorIndex={0} />
           </View>
-          <Text style={styles.userName}>{user?.name || 'User'}</Text>
+          <Text style={styles.userName} accessibilityRole="header">{user?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email || 'user@email.com'}</Text>
           <View style={styles.badgeRow}>
             <Badge label="Verified" variant="info" icon="checkmark-circle" />
@@ -72,9 +72,9 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.menuSection}>
+        <View style={styles.menuSection} accessibilityRole="menu">
           {menuItems.map((item) => (
-            <TouchableOpacity key={item.label} style={styles.menuItem} activeOpacity={0.7}>
+            <TouchableOpacity key={item.label} style={styles.menuItem} activeOpacity={0.7} accessibilityRole="menuitem" accessibilityLabel={item.label}>
               <View style={[styles.menuIcon, { backgroundColor: item.color + '12' }]}>
                 <Ionicons name={item.icon as any} size={18} color={item.color} />
               </View>
@@ -85,7 +85,7 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.languageSection}>
-          <Text style={styles.languageTitle}>{t('language')}</Text>
+          <Text style={styles.languageTitle} accessibilityRole="header">{t('language')}</Text>
           <View style={styles.languageGrid}>
             {[
               { key: 'en', label: 'English' }, { key: 'sw', label: 'Swahili' },
@@ -97,6 +97,9 @@ export default function ProfileScreen() {
                 key={lang.key}
                 style={[styles.langPill, locale === lang.key && styles.langPillActive]}
                 onPress={() => setLanguage(lang.key as any)}
+                accessibilityRole="button"
+                accessibilityLabel={`${lang.label}${locale === lang.key ? ' (selected)' : ''}`}
+                accessibilityState={{ selected: locale === lang.key }}
               >
                 <Text style={[styles.langPillText, locale === lang.key && styles.langPillTextActive]}>
                   {lang.label}
@@ -106,7 +109,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut} accessibilityRole="button" accessibilityLabel="Sign out of your account">
           <Ionicons name="log-out-outline" size={18} color={COLORS.danger} />
           <Text style={styles.signOutText}>{t('sign_out')}</Text>
         </TouchableOpacity>
