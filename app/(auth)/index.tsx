@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
 import { useAuthStore } from '@/stores';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 
@@ -32,11 +33,17 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.gradientBg} pointerEvents="none">
+      <LinearGradient
+        colors={GRADIENTS.hero as readonly [string, string]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={styles.gradientBg}
+        pointerEvents="none"
+      >
         <View style={[styles.circle, styles.circle1]} />
         <View style={[styles.circle, styles.circle2]} />
         <View style={[styles.circle, styles.circle3]} />
-      </View>
+      </LinearGradient>
 
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -205,10 +212,9 @@ const styles = StyleSheet.create({
 
   statsRow: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    borderRadius: BORDER_RADIUS.xl, paddingVertical: 18, paddingHorizontal: SPACING.lg,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: BORDER_RADIUS.xl, paddingVertical: 20, paddingHorizontal: SPACING.lg,
     marginBottom: SPACING.xl, gap: 0,
-    backdropFilter: 'blur(10px)',
   },
   statItem: { flex: 1, alignItems: 'center' },
   statValue: { fontSize: 24, fontFamily: FONTS.extraBold, color: '#FFFFFF', letterSpacing: -0.5 },
@@ -237,7 +243,7 @@ const styles = StyleSheet.create({
   socialBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
     paddingVertical: 16, borderRadius: BORDER_RADIUS.lg,
-    borderWidth: 2, borderColor: COLORS.border, backgroundColor: COLORS.background,
+    backgroundColor: COLORS.background, ...SHADOWS.sm,
   },
   socialBtnText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text },
 
@@ -253,7 +259,7 @@ const styles = StyleSheet.create({
   featureCard: {
     width: (width - SPACING.lg * 2 - SPACING.md) / 2,
     backgroundColor: COLORS.card, borderRadius: BORDER_RADIUS.xl, padding: SPACING.lg,
-    ...SHADOWS.sm,
+    ...SHADOWS.md,
   },
   featureIcon: {
     width: 44, height: 44, borderRadius: 14,

@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.md,
   },
   statItem: { flex: 1, alignItems: 'center' },
-  statDivider: { width: 1, height: '100%', backgroundColor: COLORS.border },
+  statDivider: { width: 1, height: '100%', backgroundColor: COLORS.borderLight },
   statValue: { fontSize: 28, fontFamily: FONTS.extraBold, color: COLORS.primary, letterSpacing: -0.5 },
   statLabel: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.medium, color: COLORS.textLight, marginTop: 4 },
   menuSection: {
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   menuItem: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: 16, paddingHorizontal: SPACING.lg,
-    borderBottomWidth: 1, borderBottomColor: COLORS.border,
+    borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
   },
   menuIcon: { width: 36, height: 36, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   menuLabel: { flex: 1, fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text, marginLeft: SPACING.md },

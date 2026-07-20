@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from '@/hooks';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 
@@ -132,8 +133,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl,
     padding: SPACING.lg, marginBottom: SPACING.md, ...SHADOWS.md,
   },
-  communityIcon: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
-  communityInitial: { fontSize: 24, fontFamily: FONTS.bold },
+  communityIcon: { width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  communityInitial: { fontSize: 26, fontFamily: FONTS.bold },
   communityInfo: { flex: 1, marginLeft: SPACING.md },
   communityNameRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 5 },
   communityName: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text, letterSpacing: -0.2 },
