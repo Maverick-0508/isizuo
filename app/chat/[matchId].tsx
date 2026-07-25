@@ -9,6 +9,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
 import { useChatStore, useAuthStore, useMatchingStore } from '@/stores';
@@ -38,6 +39,9 @@ export default function ChatScreen() {
   const flatListRef = useRef<FlatList>(null);
 
   const messages = conversations[matchId || ''] || [];
+  const matchedUser = useMatchingStore((s) => s.matches.find((m) => m.id === matchId));
+  const matchName = matchedUser?.otherUser?.name || 'Match';
+  const isOnline = false;
 
   useEffect(() => {
     if (matchId) {
@@ -89,16 +93,16 @@ export default function ChatScreen() {
       keyboardVerticalOffset={90}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Text style={styles.backText}>←</Text>
+        <TouchableOpacity onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Back to matches">
+          <Ionicons name="arrow-back" size={24} color={COLORS.text} />
         </TouchableOpacity>
-        <Avatar size={36} isVerified />
+        <Avatar size={36} isVerified={matchedUser?.otherUser?.isVerified} />
         <View style={styles.headerInfo}>
-          <Text style={styles.headerName}>Match</Text>
-          <Text style={styles.headerStatus}>Online</Text>
+          <Text style={styles.headerName}>{matchName}</Text>
+          <Text style={[styles.headerStatus, { color: isOnline ? COLORS.success : COLORS.textLight }]}>{isOnline ? t('online') : t('offline')}</Text>
         </View>
-        <TouchableOpacity style={styles.safetyButton} onPress={() => router.push('/safety')}>
-          <Text style={styles.safetyIcon}>🛡️</Text>
+        <TouchableOpacity style={styles.safetyButton} onPress={() => router.push('/safety')} accessibilityRole="button" accessibilityLabel="Safety check-in">
+          <Ionicons name="shield-checkmark" size={24} color={COLORS.success} />
         </TouchableOpacity>
       </View>
 

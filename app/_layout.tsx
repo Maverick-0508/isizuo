@@ -13,6 +13,8 @@ import {
 import { useAuthStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
+import { User } from '@/types';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 const FOCUS_CSS = `
   *:focus-visible {
@@ -24,7 +26,7 @@ const FOCUS_CSS = `
   input:focus-visible {
     outline: none;
     border-color: ${COLORS.primary} !important;
-    box-shadow: 0 0 0 4px rgba(179, 36, 100, 0.15);
+    box-shadow: 0 0 0 4px ${COLORS.primaryGlow};
   }
   [role="button"]:focus-visible,
   button:focus-visible {
@@ -73,7 +75,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated, isLoading]);
+  }, [isAuthenticated, isLoading, segments, router]);
 
   return <>{children}</>;
 }
@@ -92,24 +94,21 @@ export default function RootLayout() {
 
   useEffect(() => {
     injectGlobalStyles();
-    const timeout = setTimeout(() => setReady(true), 2000);
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user as any);
+      setUser((session?.user as unknown as User) || null);
     }).catch(() => {}).finally(() => {
-      clearTimeout(timeout);
       setReady(true);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      setUser(session?.user as any);
+      setUser((session?.user as unknown as User) || null);
     });
 
     return () => {
       subscription.unsubscribe();
-      clearTimeout(timeout);
     };
   }, []);
 
@@ -126,9 +125,10 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthGuard>
-      <StatusBar style="dark" />
-      <Stack
+    <ErrorBoundary>
+      <AuthGuard>
+        <StatusBar style="dark" />
+        <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.background },
@@ -145,6 +145,7 @@ export default function RootLayout() {
         <Stack.Screen name="family" />
       </Stack>
     </AuthGuard>
+    </ErrorBoundary>
   );
 }
 

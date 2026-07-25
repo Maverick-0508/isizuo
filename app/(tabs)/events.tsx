@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
 import { Badge, Button, Card } from '@/components/ui';
 import { Logo } from '@/components/Logo';
+import { useEventStore } from '@/stores';
 
 const { width } = Dimensions.get('window');
 
@@ -26,32 +27,41 @@ const SAMPLE_EVENTS = [
 
 export default function EventsScreen() {
   const { t } = useTranslation();
+  const { events: storeEvents, isLoading, fetchEvents, rsvpEvent, userEvents } = useEventStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [events, setEvents] = useState(SAMPLE_EVENTS);
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const events = storeEvents.length > 0 ? storeEvents : [];
+
+  const enrichedEvents = useMemo(() => {
+    return events.map((e: any) => ({
+      ...e,
+      rsvp: userEvents.includes(e.id),
+    }));
+  }, [events, userEvents]);
 
   const filteredEvents = useMemo(() => {
-    let result = events;
+    let result = enrichedEvents;
     if (activeCategory !== 'all') {
-      result = result.filter(e => e.category === activeCategory);
+      result = result.filter((e: any) => e.category === activeCategory);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(e =>
-        e.title.toLowerCase().includes(q) ||
-        e.location.toLowerCase().includes(q) ||
-        e.description.toLowerCase().includes(q)
+      result = result.filter((e: any) =>
+        (e.title || '').toLowerCase().includes(q) ||
+        (e.location || '').toLowerCase().includes(q) ||
+        (e.description || '').toLowerCase().includes(q)
       );
     }
     return result;
-  }, [events, activeCategory, searchQuery]);
+  }, [enrichedEvents, activeCategory, searchQuery]);
 
   const handleRSVP = (eventId: string) => {
-    setEvents(prev => prev.map(e =>
-      e.id === eventId
-        ? { ...e, rsvp: !e.rsvp, attendees: e.rsvp ? e.attendees - 1 : e.attendees + 1 }
-        : e
-    ));
+    rsvpEvent(eventId);
   };
 
   return (

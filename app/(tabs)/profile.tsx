@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
-import { useAuthStore, useAppStore } from '@/stores';
+import { useAuthStore, useAppStore, useMatchingStore } from '@/stores';
 import { Logo } from '@/components/Logo';
 
 export default function ProfileScreen() {
@@ -13,6 +13,8 @@ export default function ProfileScreen() {
   const { setLanguage } = useAppStore();
   const router = useRouter();
   const { user, signOut } = useAuthStore();
+  const { matches } = useMatchingStore();
+  const matchCount = matches.length;
 
   const handleSignOut = () => {
     Alert.alert(t('sign_out'), t('confirm'), [
@@ -23,7 +25,7 @@ export default function ProfileScreen() {
 
   const menuItems = [
     { icon: 'person-outline', label: t('edit_profile'), color: COLORS.primary, route: '/(tabs)/profile' },
-    { icon: 'shield-outline', label: t('safety_settings'), color: COLORS.safe, route: null },
+    { icon: 'shield-outline', label: t('safety_settings'), color: COLORS.safe, route: '/safety' },
     { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info, route: null },
     { icon: 'diamond-outline', label: t('subscription'), color: COLORS.premium, route: null },
     { icon: 'language-outline', label: t('language'), color: COLORS.secondary, route: null },
@@ -42,7 +44,7 @@ export default function ProfileScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.profileCard} accessibilityRole="region" accessibilityLabel="User profile">
+        <View style={styles.profileCard} accessibilityLabel="User profile">
           <View style={styles.avatarWrap}>
             <Avatar name={user?.name || 'User'} size={96} isVerified={true} colorIndex={0} />
           </View>
@@ -52,23 +54,23 @@ export default function ProfileScreen() {
             <Badge label={t('verified')} variant="info" icon="checkmark-circle" />
             <Badge label={t('premium_badge')} variant="premium" icon="diamond" />
           </View>
-          <Button title={t('edit_profile')} variant="outline" size="sm" icon="create-outline" onPress={() => {}} fullWidth />
+          <Button title={t('edit_profile')} variant="outline" size="sm" icon="create-outline" onPress={() => router.push('/profile/edit')} fullWidth />
         </View>
 
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>12</Text>
+            <Text style={styles.statValue}>{matchCount}</Text>
             <Text style={styles.statLabel}>{t('matches')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>48</Text>
-            <Text style={styles.statLabel}>{t('likes')}</Text>
+            <Text style={styles.statValue}>{user?.credits ?? 0}</Text>
+            <Text style={styles.statLabel}>{t('credits')}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>23</Text>
-            <Text style={styles.statLabel}>{t('profile_views')}</Text>
+            <Text style={styles.statValue}>{user?.safetyScore ?? 50}</Text>
+            <Text style={styles.statLabel}>{t('safety_score')}</Text>
           </View>
         </View>
 
@@ -101,8 +103,7 @@ export default function ProfileScreen() {
             {[
               { key: 'en', label: 'English' }, { key: 'sw', label: 'Swahili' },
               { key: 'am', label: 'Amharic' }, { key: 'yo', label: 'Yoruba' },
-              { key: 'ig', label: 'Igbo' }, { key: 'ha', label: 'Hausa' },
-              { key: 'zu', label: 'Zulu' }, { key: 'fr', label: 'French' },
+              { key: 'ha', label: 'Hausa' },
             ].map((lang) => (
               <TouchableOpacity
                 key={lang.key}

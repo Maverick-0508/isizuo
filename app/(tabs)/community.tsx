@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
 import { Logo } from '@/components/Logo';
+import { useCommunityStore } from '@/stores';
 
 const { width } = Dimensions.get('window');
 
@@ -19,34 +20,39 @@ const SAMPLE_COMMUNITIES = [
 
 export default function CommunityScreen() {
   const { t } = useTranslation();
+  const { communities: storeCommunities, isLoading, fetchCommunities, joinCommunity, userCommunities } = useCommunityStore();
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [searchQuery, setSearchQuery] = useState('');
-  const [communities, setCommunities] = useState(SAMPLE_COMMUNITIES);
 
-  const joinedCount = communities.filter(c => c.isJoined).length;
+  useEffect(() => {
+    fetchCommunities();
+  }, []);
+
+  const communities = storeCommunities.map((c: any) => ({
+    ...c,
+    isJoined: userCommunities.includes(c.id),
+  }));
+
+  const joinedCount = communities.filter((c: any) => c.isJoined).length;
 
   const filteredCommunities = useMemo(() => {
     let result = communities;
     if (activeTab === 'joined') {
-      result = result.filter(c => c.isJoined);
+      result = result.filter((c: any) => c.isJoined);
     }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      result = result.filter(c =>
-        c.name.toLowerCase().includes(q) ||
-        c.description.toLowerCase().includes(q) ||
-        c.category.toLowerCase().includes(q)
+      result = result.filter((c: any) =>
+        (c.name || '').toLowerCase().includes(q) ||
+        (c.description || '').toLowerCase().includes(q) ||
+        (c.category || '').toLowerCase().includes(q)
       );
     }
     return result;
   }, [communities, activeTab, searchQuery]);
 
   const handleJoinToggle = (communityId: string) => {
-    setCommunities(prev => prev.map(c =>
-      c.id === communityId
-        ? { ...c, isJoined: !c.isJoined, members: c.isJoined ? c.members - 1 : c.members + 1 }
-        : c
-    ));
+    joinCommunity(communityId);
   };
 
   return (

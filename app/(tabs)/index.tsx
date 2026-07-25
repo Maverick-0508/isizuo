@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,10 +7,11 @@ import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button, Badge, Avatar, ActiveNowBadge } from '@/components/ui';
 import { Logo } from '@/components/Logo';
+import { useMatchingStore } from '@/stores';
 
 const { width } = Dimensions.get('window');
 
-const AVATAR_GRADIENTS: readonly (readonly string[])[] = [
+const AVATAR_GRADIENTS: readonly (readonly [string, string])[] = [
   ['#B32464', '#FF6B6B'],
   ['#5B4BD5', '#A29BFE'],
   ['#00B894', '#55EFC4'],
@@ -31,7 +32,14 @@ const SAMPLE_MATCHES = [
 export default function MatchesScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { matches, isLoading, fetchMatches } = useMatchingStore();
   const [activeTab, setActiveTab] = useState<'matches' | 'likes' | 'visits'>('matches');
+
+  useEffect(() => {
+    fetchMatches();
+  }, []);
+
+  const displayMatches = matches.length > 0 ? matches : [];
 
   const tabs = [
     { key: 'matches' as const, label: t('matches'), icon: 'heart' as const },
@@ -73,24 +81,25 @@ export default function MatchesScreen() {
             {/* New Matches - Large Horizontal Scroll */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle} accessibilityRole="header">{t('new_matches')}</Text>
-              <Badge label={`${SAMPLE_MATCHES.length} ${t('new_count')}`} variant="success" icon="sparkles" />
+              <Badge label={`${displayMatches.length} ${t('new_count')}`} variant="success" icon="sparkles" />
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newMatchesScroll} contentContainerStyle={styles.newMatchesContent}>
-              {SAMPLE_MATCHES.slice(0, 4).map((m, i) => (
-                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${m.name}`}>
+              {displayMatches.slice(0, 4).map((m: any, i: number) => (
+                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${m.otherUser?.name || 'Match'}`}>
                   <LinearGradient
                     colors={AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length] as readonly [string, string]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     style={styles.newMatchImage}
                   >
-                    <Text style={styles.newMatchInitial}>{m.name.charAt(0)}</Text>
-                    <View style={styles.newMatchBadge}>
-                      <Text style={styles.newMatchBadgeText}>{m.compatibility}%</Text>
-                    </View>
+                    <Text style={styles.newMatchInitial}>{(m.otherUser?.name || 'M').charAt(0)}</Text>
+                    {m.compatibilityScore && (
+                      <View style={styles.newMatchBadge}>
+                        <Text style={styles.newMatchBadgeText}>{m.compatibilityScore}%</Text>
+                      </View>
+                    )}
                   </LinearGradient>
-                  <Text style={styles.newMatchName} numberOfLines={1}>{m.name.split(' ')[0]}</Text>
-                  <ActiveNowBadge isActive={m.isActive} lastActive={m.lastActive} />
+                  <Text style={styles.newMatchName} numberOfLines={1}>{(m.otherUser?.name || 'Match').split(' ')[0]}</Text>
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -102,8 +111,8 @@ export default function MatchesScreen() {
                 <Text style={styles.seeAll}>{t('see_all')}</Text>
               </TouchableOpacity>
             </View>
-            {SAMPLE_MATCHES.map((match, i) => (
-              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${match.name}`}>
+            {displayMatches.map((match: any, i: number) => (
+              <TouchableOpacity key={match.id} style={styles.chatCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${match.otherUser?.name || 'Match'}`} onPress={() => router.push(`/chat/${match.id}`)}>
                 <View style={styles.chatCardLeft}>
                   <LinearGradient
                     colors={AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length] as readonly [string, string]}
@@ -111,33 +120,22 @@ export default function MatchesScreen() {
                     end={{ x: 1, y: 1 }}
                     style={styles.chatAvatar}
                   >
-                    <Text style={styles.chatAvatarText}>{match.name.charAt(0)}</Text>
+                    <Text style={styles.chatAvatarText}>{(match.otherUser?.name || 'M').charAt(0)}</Text>
                   </LinearGradient>
-                  <View style={styles.chatOnlineDot}>
-                    <View style={[styles.chatOnlineInner, { backgroundColor: match.isActive ? COLORS.success : COLORS.textLight }]} />
-                  </View>
                 </View>
                 <View style={styles.chatInfo}>
                   <View style={styles.chatNameRow}>
-                    <Text style={styles.chatName}>{match.name}</Text>
-                    {match.isVerified && <Ionicons name="checkmark-circle" size={14} color={COLORS.info} />}
-                    {match.isPremium && <Ionicons name="diamond" size={12} color={COLORS.premium} />}
+                    <Text style={styles.chatName}>{match.otherUser?.name || 'Match'}</Text>
                   </View>
-                  <Text style={styles.chatBio}>{match.bio} \u2022 {match.location}</Text>
-                  <View style={styles.chatTags}>
-                    {match.interests.slice(0, 2).map((interest) => (
-                      <View key={interest} style={styles.chatTag}>
-                        <Text style={styles.chatTagText}>{interest}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  <Text style={styles.chatBio}>{match.otherUser?.bio || 'Start a conversation...'}</Text>
                 </View>
-                <View style={styles.chatRight}>
-                  <ActiveNowBadge isActive={match.isActive} lastActive={match.lastActive} />
-                  <View style={styles.chatCompat}>
-                    <Text style={styles.chatCompatText}>{match.compatibility}%</Text>
+                {match.compatibilityScore && (
+                  <View style={styles.chatRight}>
+                    <View style={styles.chatCompat}>
+                      <Text style={styles.chatCompatText}>{match.compatibilityScore}%</Text>
+                    </View>
                   </View>
-                </View>
+                )}
               </TouchableOpacity>
             ))}
           </>

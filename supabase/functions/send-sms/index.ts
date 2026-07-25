@@ -5,7 +5,7 @@ const AFRICASTALKING_USERNAME = Deno.env.get("AFRICASTALKING_USERNAME") || "sand
 const AFRICASTALKING_URL = "https://api.africastalking.com/version1/messaging";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 

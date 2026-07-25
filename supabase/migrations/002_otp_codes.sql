@@ -20,5 +20,6 @@ alter table otp_codes enable row level security;
 
 -- Only Edge Functions (service_role) need access; no anon access
 create policy "Service role full access" on otp_codes
-  for all using (true)
-  with check (true);
+  for all
+  using (auth.role() = 'service_role')
+  with check (auth.role() = 'service_role');

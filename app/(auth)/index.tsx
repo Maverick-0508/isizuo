@@ -7,7 +7,6 @@ import { useTranslation } from '@/hooks';
 import { useAuthStore } from '@/stores';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
-import { Logo } from '@/components/Logo';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,7 +24,7 @@ export default function LoginScreen() {
     setIsLoading(true);
     try {
       await signIn(email.trim());
-      router.replace('/(tabs)');
+      router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
     } catch (err) {
       setError(t('error'));
     } finally {
@@ -83,7 +82,7 @@ export default function LoginScreen() {
             <Text style={styles.formTitle} accessibilityRole="header">{t('get_started')}</Text>
             <Text style={styles.formDesc}>{t('email_description')}</Text>
 
-            <View style={styles.inputContainer} accessibilityRole="form">
+            <View style={styles.inputContainer}>
               <Ionicons name="mail-outline" size={20} color={COLORS.textLight} />
               <TextInput
                 style={styles.input}

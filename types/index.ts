@@ -16,15 +16,17 @@ export interface User {
   interests: string[];
   familyValues: 'traditional' | 'modern' | 'balanced';
   lookingFor: 'relationship' | 'friendship' | 'marriage' | 'networking';
-  location: { latitude: number; longitude: number };
+  location: string | { latitude: number; longitude: number };
   isVerified: boolean;
   isPhotoVerified: boolean;
+  isPremium?: boolean;
   kycLevel: 'none' | 'phone' | 'id' | 'full';
   safetyScore: number;
   boostedUntil?: string;
   credits: number;
   createdAt: string;
   updatedAt: string;
+  _compatibilityScore?: number;
 }
 
 export interface Match {
@@ -37,6 +39,7 @@ export interface Match {
   status: 'pending' | 'matched' | 'expired' | 'blocked';
   initiatedBy: string;
   createdAt: string;
+  otherUser?: User;
 }
 
 export interface Message {

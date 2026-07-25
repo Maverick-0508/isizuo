@@ -1,11 +1,12 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, PanResponder } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, PanResponder, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
-import { Badge, Avatar, Button, ActiveNowBadge, InterestPill } from '@/components/ui';
+import { Badge, Avatar, Button, ActiveNowBadge, InterestPill, EmptyState } from '@/components/ui';
 import { Logo } from '@/components/Logo';
+import { useMatchingStore } from '@/stores';
 
 const { width, height } = Dimensions.get('window');
 const CARD_WIDTH = width - SPACING.lg * 2;
@@ -21,7 +22,7 @@ const CATEGORIES = [
   { key: 'premium', labelKey: 'premium_badge' as const, icon: 'diamond' },
 ];
 
-const AVATAR_GRADIENTS: readonly (readonly string[])[] = [
+const AVATAR_GRADIENTS: readonly (readonly [string, string])[] = [
   ['#B32464', '#FF6B6B'],
   ['#5B4BD5', '#A29BFE'],
   ['#00B894', '#55EFC4'],
@@ -42,6 +43,7 @@ const SAMPLE_PROFILES = [
 
 export default function ExploreScreen() {
   const { t } = useTranslation();
+  const { potentialMatches, isLoading, fetchPotentialMatches, likeUser, passUser, superLikeUser } = useMatchingStore();
   const [activeCategory, setActiveCategory] = useState('nearby');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [activeProfileTab, setActiveProfileTab] = useState<'about' | 'interests' | 'values'>('about');
@@ -52,12 +54,17 @@ export default function ExploreScreen() {
   const scaleNext = useRef(new Animated.Value(0.95)).current;
   const scaleNext2 = useRef(new Animated.Value(0.9)).current;
 
-  const currentProfile = SAMPLE_PROFILES[currentIndex % SAMPLE_PROFILES.length];
-  const nextProfile = SAMPLE_PROFILES[(currentIndex + 1) % SAMPLE_PROFILES.length];
-  const next2Profile = SAMPLE_PROFILES[(currentIndex + 2) % SAMPLE_PROFILES.length];
-  const gradient = AVATAR_GRADIENTS[currentIndex % AVATAR_GRADIENTS.length] as readonly string[];
-  const nextGradient = AVATAR_GRADIENTS[(currentIndex + 1) % AVATAR_GRADIENTS.length] as readonly string[];
-  const next2Gradient = AVATAR_GRADIENTS[(currentIndex + 2) % AVATAR_GRADIENTS.length] as readonly string[];
+  useEffect(() => {
+    fetchPotentialMatches();
+  }, []);
+
+  const profiles = potentialMatches.length > 0 ? potentialMatches : [];
+  const currentProfile = profiles[currentIndex % profiles.length];
+  const nextProfile = profiles[(currentIndex + 1) % profiles.length];
+  const next2Profile = profiles[(currentIndex + 2) % profiles.length];
+  const gradient = AVATAR_GRADIENTS[currentIndex % AVATAR_GRADIENTS.length];
+  const nextGradient = AVATAR_GRADIENTS[(currentIndex + 1) % AVATAR_GRADIENTS.length];
+  const next2Gradient = AVATAR_GRADIENTS[(currentIndex + 2) % AVATAR_GRADIENTS.length];
 
   const resetCard = useCallback(() => {
     position.setValue({ x: 0, y: 0 });
@@ -145,9 +152,21 @@ export default function ExploreScreen() {
     })
   ).current;
 
-  const handlePass = useCallback(() => animateSwipe('left'), [animateSwipe]);
-  const handleLike = useCallback(() => animateSwipe('right'), [animateSwipe]);
-  const handleSuperLike = useCallback(() => animateSwipe('right'), [animateSwipe]);
+  const handlePass = useCallback(() => {
+    if (profiles[currentIndex]) passUser(profiles[currentIndex].id);
+    animateSwipe('left');
+  }, [animateSwipe, profiles, currentIndex, passUser]);
+
+  const handleLike = useCallback(() => {
+    if (profiles[currentIndex]) likeUser(profiles[currentIndex].id);
+    animateSwipe('right');
+  }, [animateSwipe, profiles, currentIndex, likeUser]);
+
+  const handleSuperLike = useCallback(() => {
+    if (profiles[currentIndex]) superLikeUser(profiles[currentIndex].id);
+    animateSwipe('right');
+  }, [animateSwipe, profiles, currentIndex, superLikeUser]);
+
   const handleBoost = useCallback(() => animateSwipe('right'), [animateSwipe]);
 
   const cardOpacity = position.x.interpolate({
@@ -203,7 +222,15 @@ export default function ExploreScreen() {
       </ScrollView>
 
       <View style={styles.content}>
-        {/* Card Stack */}
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+            <Text style={styles.loadingText}>{t('loading')}</Text>
+          </View>
+        ) : profiles.length === 0 ? (
+          <EmptyState icon="people-outline" title={t('no_matches')} message="Check back later for new profiles" />
+        ) : (
+        <>
         <View style={styles.cardStack} {...panResponder.panHandlers}>
           {/* Background card 2 (furthest peek) */}
           <Animated.View style={[styles.discoveryCard, styles.discoveryCardBg2, { transform: [{ scale: scaleNext2 }] }]} />
@@ -249,7 +276,7 @@ export default function ExploreScreen() {
               </View>
               <View style={styles.cardDistanceBadge}>
                 <Ionicons name="location" size={12} color={COLORS.textInverse} />
-                <Text style={styles.cardDistanceText}>{currentProfile.distance}</Text>
+                <Text style={styles.cardDistanceText}>{typeof currentProfile.location === 'string' ? currentProfile.location : ''}</Text>
               </View>
 
               {/* Like/Pass indicators */}
@@ -275,11 +302,11 @@ export default function ExploreScreen() {
                 </View>
                 <View style={styles.cardLocationRow}>
                   <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.8)" />
-                  <Text style={styles.cardLocation}>{currentProfile.location}</Text>
+                  <Text style={styles.cardLocation}>{typeof currentProfile.location === 'string' ? currentProfile.location : `${currentProfile.location.latitude.toFixed(2)}, ${currentProfile.location.longitude.toFixed(2)}`}</Text>
                 </View>
               </View>
               <View style={styles.compatibilityBadge}>
-                <Text style={styles.compatibilityValue}>{currentProfile.compatibility}%</Text>
+                <Text style={styles.compatibilityValue}>{currentProfile._compatibilityScore ?? 0}%</Text>
                 <Text style={styles.compatibilityLabel}>{t('match')}</Text>
               </View>
             </View>
@@ -371,6 +398,8 @@ export default function ExploreScreen() {
             <Text style={styles.quickActionCount}>23 {t('total_count')}</Text>
           </TouchableOpacity>
         </View>
+        </>
+        )}
       </View>
     </View>
   );
@@ -378,6 +407,8 @@ export default function ExploreScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: COLORS.background },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: SPACING.md },
+  loadingText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.medium, color: COLORS.textMuted },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: SPACING.lg, paddingTop: 56, paddingBottom: SPACING.md,

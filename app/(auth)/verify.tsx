@@ -10,7 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, FONTS } from '@/constants';
 import { useAuthStore } from '@/stores';
 import { useTranslation } from '@/hooks';
 import { Button } from '@/components/ui';
@@ -136,14 +136,14 @@ const styles = StyleSheet.create({
   backText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.primary,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
   header: {
     marginBottom: SPACING.xxl,
   },
   title: {
     fontSize: FONT_SIZES.title,
-    fontWeight: '800',
+    fontFamily: FONTS.extraBold,
     color: COLORS.text,
     marginBottom: SPACING.sm,
   },
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
   email: {
     fontSize: FONT_SIZES.lg,
     color: COLORS.primary,
-    fontWeight: '600',
+    fontFamily: FONTS.semiBold,
   },
   otpContainer: {
     flexDirection: 'row',
@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     borderRadius: BORDER_RADIUS.md,
     textAlign: 'center',
     fontSize: FONT_SIZES.xxl,
-    fontWeight: '700',
+    fontFamily: FONTS.bold,
     color: COLORS.text,
     backgroundColor: COLORS.surface,
   },
@@ -187,6 +187,6 @@ const styles = StyleSheet.create({
   resendText: {
     fontSize: FONT_SIZES.md,
     color: COLORS.primary,
-    fontWeight: '500',
+    fontFamily: FONTS.medium,
   },
 });

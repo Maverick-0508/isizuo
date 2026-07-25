@@ -9,6 +9,8 @@ import {
   Alert,
   Image,
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { router } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, COMMUNITIES, INTERESTS, VALUES_LIST, LOOKING_FOR_OPTIONS } from '@/constants';
 import { useAuthStore, useAppStore } from '@/stores';
@@ -38,6 +40,20 @@ export default function OnboardingScreen() {
   const { t } = useTranslation();
 
   const currentStep = STEPS[step];
+
+  const pickImage = async (index: number) => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [3, 4],
+      quality: 0.8,
+    });
+    if (!result.canceled && result.assets[0]) {
+      const newPhotos = [...photos];
+      newPhotos[index] = result.assets[0].uri;
+      setPhotos(newPhotos);
+    }
+  };
 
   const toggleLanguage = (lang: Language) => {
     if (languages.includes(lang)) {
@@ -81,6 +97,12 @@ export default function OnboardingScreen() {
 
   const handleComplete = async () => {
     try {
+      let location = { latitude: 0, longitude: 0 };
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status === 'granted') {
+        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+        location = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      }
       await updateProfile({
         name,
         age: parseInt(age),
@@ -94,7 +116,7 @@ export default function OnboardingScreen() {
         familyValues,
         lookingFor,
         photos,
-        location: { latitude: 0, longitude: 0 },
+        location,
         isVerified: false,
         isPhotoVerified: false,
         kycLevel: 'none',
@@ -318,8 +340,12 @@ export default function OnboardingScreen() {
 
             <View style={styles.photoGrid}>
               {[0, 1, 2, 3, 4, 5].map((index) => (
-                <TouchableOpacity key={index} style={styles.photoSlot}>
-                  <Text style={styles.photoPlaceholder}>+</Text>
+                <TouchableOpacity key={index} style={styles.photoSlot} onPress={() => pickImage(index)}>
+                  {photos[index] ? (
+                    <Image source={{ uri: photos[index] }} style={styles.photoImage} />
+                  ) : (
+                    <Text style={styles.photoPlaceholder}>+</Text>
+                  )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -512,6 +538,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: COLORS.surface,
+    overflow: 'hidden',
+  },
+  photoImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: BORDER_RADIUS.lg,
   },
   photoPlaceholder: {
     fontSize: 32,

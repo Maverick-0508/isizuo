@@ -76,8 +76,7 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: COLORS.glassBg,
     borderTopWidth: 0,
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
+    ...(Platform.OS === 'web' ? { backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' } : {}),
     shadowColor: COLORS.shadow,
     shadowOffset: { width: 0, height: -8 },
     shadowOpacity: 0.06,

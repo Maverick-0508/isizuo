@@ -54,15 +54,15 @@ export const COLORS = {
 };
 
 export const GRADIENTS = {
-  primary: ['#5B4BD5', '#B32464'],
-  warm: ['#B32464', '#FF6B6B'],
-  cool: ['#5B4BD5', '#A29BFE'],
-  sunset: ['#FF6B6B', '#E8A820'],
-  ocean: ['#00B894', '#4A90D9'],
-  purple: ['#6C5CE7', '#A29BFE'],
-  hero: ['#9A1B52', '#5B4BD5'],
-  cardOverlay: ['transparent', 'rgba(0,0,0,0.7)'],
-  cardOverlayTop: ['rgba(0,0,0,0.5)', 'transparent'],
+  primary: ['#5B4BD5', '#B32464'] as const,
+  warm: ['#B32464', '#FF6B6B'] as const,
+  cool: ['#5B4BD5', '#A29BFE'] as const,
+  sunset: ['#FF6B6B', '#E8A820'] as const,
+  ocean: ['#00B894', '#4A90D9'] as const,
+  purple: ['#6C5CE7', '#A29BFE'] as const,
+  hero: ['#9A1B52', '#5B4BD5'] as const,
+  cardOverlay: ['transparent', 'rgba(0,0,0,0.7)'] as const,
+  cardOverlayTop: ['rgba(0,0,0,0.5)', 'transparent'] as const,
 };
 
 export const SPACING = {

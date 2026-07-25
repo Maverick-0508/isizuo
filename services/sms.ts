@@ -4,9 +4,7 @@ const EDGE_FUNCTION_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1
 
 export async function sendSMS(phone: string, message: string): Promise<boolean> {
   try {
-    console.log(`[SMS] Sending to ${phone}: ${message.substring(0, 50)}...`);
-
-    const { error } = await supabase.functions.invoke('quick-worker', {
+    const { error } = await supabase.functions.invoke('send-sms', {
       body: { phone, message },
     });
 
@@ -20,7 +18,7 @@ export async function sendSMS(phone: string, message: string): Promise<boolean> 
 
 export async function sendOTP(
   email: string
-): Promise<{ session: any; user: any } | null> {
+): Promise<{ success: boolean; message: string } | null> {
   try {
     const res = await fetch(`${EDGE_FUNCTION_BASE}/send-otp`, {
       method: 'POST',
@@ -32,25 +30,16 @@ export async function sendOTP(
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
-    return { session: data.session, user: data.user };
+    return { success: true, message: data.message || 'Code sent' };
   } catch (error) {
-    console.warn('[OTP] Edge Function failed, creating local session:', error);
-    const mockUser = {
-      id: crypto.randomUUID(),
-      email,
-      user_metadata: { email },
-      app_metadata: {},
-      aud: 'authenticated',
-      role: 'authenticated',
-      created_at: new Date().toISOString(),
-    };
-    return { session: { access_token: 'local', refresh_token: 'local', user: mockUser }, user: mockUser };
+    console.error('[OTP] sendOTP failed:', error);
+    return null;
   }
 }
 
 export async function verifyOTP(
   email: string,
-  token: string
+  code: string
 ): Promise<{ session: any; user: any } | null> {
   try {
     const res = await fetch(`${EDGE_FUNCTION_BASE}/verify-otp`, {
@@ -59,23 +48,14 @@ export async function verifyOTP(
         'Content-Type': 'application/json',
         Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ email, code: token }),
+      body: JSON.stringify({ email, code }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Verification failed');
     return { session: data.session, user: data.user };
   } catch (error) {
-    console.warn('[OTP] Verify failed, creating local session:', error);
-    const mockUser = {
-      id: crypto.randomUUID(),
-      email,
-      user_metadata: { email },
-      app_metadata: {},
-      aud: 'authenticated',
-      role: 'authenticated',
-      created_at: new Date().toISOString(),
-    };
-    return { session: { access_token: 'local', refresh_token: 'local', user: mockUser }, user: mockUser };
+    console.error('[OTP] verifyOTP failed:', error);
+    return null;
   }
 }
 

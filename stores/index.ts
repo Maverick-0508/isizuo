@@ -28,21 +28,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async (email: string) => {
     try {
       const result = await sendOTP(email);
-      if (result?.session) {
-        try {
-          await supabase.auth.setSession({
-            access_token: result.session.access_token,
-            refresh_token: result.session.refresh_token,
-          });
-        } catch (_) {}
-        set({
-          session: result.session,
-          user: result.session.user as unknown as User,
-          isAuthenticated: true,
-        });
-        return;
+      if (!result?.success) {
+        throw new Error('Failed to send verification code');
       }
-      throw new Error('Failed to sign in');
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
@@ -104,9 +92,10 @@ interface MatchingState {
   setMatches: (matches: Match[]) => void;
   setPotentialMatches: (matches: User[]) => void;
   likeUser: (userId: string) => Promise<void>;
-  passUser: (userId: string) => void;
+  passUser: (userId: string) => Promise<void>;
   superLikeUser: (userId: string) => Promise<void>;
   fetchPotentialMatches: () => Promise<void>;
+  fetchMatches: () => Promise<void>;
 }
 
 export const useMatchingStore = create<MatchingState>((set, get) => ({
@@ -153,7 +142,18 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
     }
   },
 
-  passUser: (userId: string) => {
+  passUser: async (userId: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      await supabase.from('swipes').insert({
+        swiper_id: user.id,
+        swiped_id: userId,
+        action: 'pass',
+      });
+    } catch (error) {
+      console.error('Pass error:', error);
+    }
     set((state) => ({
       currentMatchIndex: state.currentMatchIndex + 1,
     }));
@@ -196,6 +196,41 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
       scored.sort((a: any, b: any) => b._compatibilityScore - a._compatibilityScore);
 
       set({ potentialMatches: scored, isLoading: false });
+    } catch (error) {
+      console.error('Fetch matches error:', error);
+      set({ isLoading: false });
+    }
+  },
+
+  fetchMatches: async () => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    set({ isLoading: true });
+    try {
+      const { data, error } = await supabase
+        .from('matches')
+        .select('*, user_1_profile:profiles!matches_user_1_fkey(*), user_2_profile:profiles!matches_user_2_fkey(*)')
+        .or(`user_1.eq.${user.id},user_2.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const matches = (data || []).map((m: any) => {
+        const otherProfile = m.user_1 === user.id ? m.user_2_profile : m.user_1_profile;
+        return {
+          id: m.id,
+          userId: m.user_1,
+          matchedUserId: m.user_2,
+          compatibilityScore: m.compatibility_score ?? 0,
+          culturalScore: 0,
+          interestsScore: 0,
+          status: 'matched' as const,
+          initiatedBy: m.user_1,
+          createdAt: m.created_at,
+          otherUser: otherProfile,
+        } as Match;
+      });
+
+      set({ matches, isLoading: false });
     } catch (error) {
       console.error('Fetch matches error:', error);
       set({ isLoading: false });
@@ -378,7 +413,7 @@ export const useSafetyStore = create<SafetyState>((set, get) => ({
       id: Date.now().toString(),
       userId: user.id,
       matchId,
-      location: user.location || { latitude: 0, longitude: 0 },
+      location: typeof user.location === 'object' && user.location !== null ? user.location : { latitude: 0, longitude: 0 },
       status: 'active',
       emergencyContacts: get().trustedContacts,
       checkInInterval: 30,

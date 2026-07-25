@@ -48,7 +48,8 @@ export default function SafetyScreen() {
           style: 'destructive',
           onPress: async () => {
             await triggerEmergency();
-            const location = user?.location || { latitude: 0, longitude: 0 };
+            const loc = user?.location;
+            const location = typeof loc === 'object' && loc !== null ? loc : { latitude: 0, longitude: 0 };
             trustedContacts.forEach((contact) => {
               sendSafetyAlert(contact, location);
             });

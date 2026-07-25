@@ -19,7 +19,7 @@ interface ButtonProps {
 export function Button({
   title, onPress, variant = 'primary', size = 'md', isLoading, disabled, icon, fullWidth, gradient,
 }: ButtonProps) {
-  const colors = gradient || GRADIENTS.primary as readonly [string, string, ...string[]];
+  const colors = gradient || (GRADIENTS.primary as readonly [string, string]);
 
   if (variant === 'gradient' || gradient) {
     return (
@@ -112,7 +112,7 @@ interface AvatarProps {
   colorIndex?: number;
 }
 
-const AVATAR_GRADIENTS = [
+const AVATAR_GRADIENTS: readonly (readonly [string, string])[] = [
   ['#B32464', '#FF6B6B'],
   ['#5B4BD5', '#A29BFE'],
   ['#00B894', '#55EFC4'],

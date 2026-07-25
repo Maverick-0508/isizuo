@@ -2,13 +2,13 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 function derivePassword(email: string): string {
-  // Deterministic password so we can always sign in the same user
-  const raw = email + "-isizuo-auth-salt-2024";
+  const salt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
+  const raw = email + "-" + salt;
   const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
   return `Iz${encoded}!1`;
 }
@@ -33,7 +33,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // 1. Verify OTP
     const { data: otpRecord, error: otpError } = await supabase
       .from("otp_codes")
       .select("*")
@@ -52,18 +51,15 @@ serve(async (req) => {
       );
     }
 
-    // 2. Mark OTP as used
     await supabase
       .from("otp_codes")
       .update({ used: true })
       .eq("id", otpRecord.id);
 
-    // 3. Check if user exists in Supabase Auth
     const { data: existingUser } = await supabase.auth.admin.getUserByEmail(email);
     const password = derivePassword(email);
 
     if (!existingUser?.user) {
-      // Create new user (auto-confirmed)
       const { error: createError } = await supabase.auth.admin.createUser({
         email,
         password,
@@ -78,7 +74,6 @@ serve(async (req) => {
       }
     }
 
-    // 4. Sign in to get session tokens (use anon key so tokens work on client)
     const supabaseAnon = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!
