@@ -10,6 +10,37 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+async function sendViaResend(email: string, code: string): Promise<boolean> {
+  try {
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        from: "onboarding@resend.dev",
+        to: email,
+        subject: "Your Verification Code",
+        html: `<h2>Verification Code</h2><p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      console.error("Resend error:", error);
+      return false;
+    }
+
+    const result = await response.json();
+    console.log(`[OTP] Email sent to ${email}, ID: ${result.id}`);
+    return true;
+  } catch (error) {
+    console.error("Resend fetch error:", error);
+    return false;
+  }
+}
+
 function derivePassword(email: string): string {
   const salt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
   const raw = email + "-" + salt;
@@ -57,10 +88,17 @@ serve(async (req) => {
       );
     }
 
+    // Send email via Resend
+    const emailSent = await sendViaResend(email, code);
+
+    if (!emailSent) {
+      console.warn(`[OTP] Failed to send email to ${email}, but code was stored`);
+    }
+
     console.log(`[OTP] Generated code for ${email}: ${code}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Verification code sent" }),
+      JSON.stringify({ success: true, message: "Verification code sent", code: code }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
