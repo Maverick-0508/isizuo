@@ -114,7 +114,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           access_token: result.session.access_token,
           refresh_token: result.session.refresh_token,
         });
-        const profile = await fetchUserProfile(result.session.user.id);
+        let profile = await fetchUserProfile(result.session.user.id);
+
+        if (!profile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: result.session.user.id,
+              email: email,
+              name: '',
+            });
+          if (!insertError) {
+            profile = await fetchUserProfile(result.session.user.id);
+          }
+        }
+
         set({
           session: result.session,
           user: profile,

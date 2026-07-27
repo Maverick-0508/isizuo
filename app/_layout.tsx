@@ -54,7 +54,7 @@ function injectGlobalStyles() {
 }
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
   const segments = useSegments() as string[];
   const router = useRouter();
   const hasNavigated = React.useRef(false);
@@ -72,12 +72,14 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     } else if (isAuthenticated && inAuthGroup) {
       const inOnboarding = segments[1] === 'onboarding';
-      if (!inOnboarding && (!hasNavigated.current || inAuthGroup)) {
+      const hasCompletedOnboarding = user && user.name && user.name.length > 0;
+
+      if (hasCompletedOnboarding && !inOnboarding && (!hasNavigated.current || inAuthGroup)) {
         hasNavigated.current = true;
         router.replace('/(tabs)');
       }
     }
-  }, [isAuthenticated, isLoading, segments, router]);
+  }, [isAuthenticated, isLoading, segments, router, user]);
 
   return <>{children}</>;
 }

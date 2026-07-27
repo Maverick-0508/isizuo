@@ -66,7 +66,7 @@ export default function VerifyScreen() {
       const success = await verifyOtp(email || '', otpString);
       if (success) {
         const { user } = useAuthStore.getState();
-        if (user && !user.name) {
+        if (!user || !user.name || user.name.length === 0) {
           router.replace('/(auth)/onboarding');
         } else {
           router.replace('/(tabs)');
