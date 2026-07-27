@@ -1,22 +1,19 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-function derivePassword(email: string): string {
-  const salt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
-  const raw = email + "-" + salt;
-  const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
-  return `Iz${encoded}!1`;
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -29,10 +26,21 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const authSalt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
+
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+      console.error("[verify-otp] Missing required env vars");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { count } = await supabase
@@ -79,7 +87,10 @@ serve(async (req) => {
       .eq("id", otpRecord.id);
 
     const { data: existingUser } = await supabase.auth.admin.getUserByEmail(email);
-    const password = derivePassword(email);
+
+    const raw = email + "-" + authSalt;
+    const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
+    const password = `Iz${encoded}!1`;
 
     if (!existingUser?.user) {
       const { error: createError } = await supabase.auth.admin.createUser({
@@ -88,7 +99,7 @@ serve(async (req) => {
         email_confirm: true,
       });
       if (createError) {
-        console.error("Create user error:", createError);
+        console.error("[verify-otp] Create user error:", createError);
         return new Response(
           JSON.stringify({ error: "Failed to create account" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -96,10 +107,7 @@ serve(async (req) => {
       }
     }
 
-    const supabaseAnon = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!
-    );
+    const supabaseAnon = createClient(supabaseUrl, anonKey);
 
     const { data: sessionData, error: sessionError } = await supabaseAnon.auth.signInWithPassword({
       email,
@@ -107,14 +115,14 @@ serve(async (req) => {
     });
 
     if (sessionError || !sessionData.session) {
-      console.error("Session error:", sessionError);
+      console.error("[verify-otp] Session error:", sessionError);
       return new Response(
         JSON.stringify({ error: "Failed to create session" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[OTP] Verified ${email}, session created`);
+    console.log(`[verify-otp] Verified ${email}, session created`);
 
     return new Response(
       JSON.stringify({
@@ -124,7 +132,7 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("verify-otp error:", error);
+    console.error("[verify-otp] error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

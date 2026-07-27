@@ -1,18 +1,19 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-
-const AFRICASTALKING_API_KEY = Deno.env.get("AFRICASTALKING_API_KEY");
-const AFRICASTALKING_USERNAME = Deno.env.get("AFRICASTALKING_USERNAME") || "sandbox";
-const AFRICASTALKING_URL = "https://api.africastalking.com/version1/messaging";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -25,7 +26,10 @@ serve(async (req) => {
       );
     }
 
-    if (!AFRICASTALKING_API_KEY) {
+    const africastalkingApiKey = Deno.env.get("AFRICASTALKING_API_KEY");
+    const africastalkingUsername = Deno.env.get("AFRICASTALKING_USERNAME") || "sandbox";
+
+    if (!africastalkingApiKey) {
       console.error("[send-sms] AFRICASTALKING_API_KEY is not set");
       return new Response(
         JSON.stringify({ error: "SMS service not configured" }),
@@ -34,16 +38,16 @@ serve(async (req) => {
     }
 
     const payload = {
-      username: AFRICASTALKING_USERNAME,
+      username: africastalkingUsername,
       to: phone,
       message,
     };
 
-    const response = await fetch(AFRICASTALKING_URL, {
+    const response = await fetch("https://api.africastalking.com/version1/messaging", {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        apiKey: AFRICASTALKING_API_KEY,
+        apiKey: africastalkingApiKey,
         Accept: "application/json",
       },
       body: new URLSearchParams(payload).toString(),

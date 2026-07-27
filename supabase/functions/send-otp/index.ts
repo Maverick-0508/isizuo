@@ -1,6 +1,3 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -11,58 +8,16 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-function derivePassword(email: string): string {
-  const salt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
-  const raw = email + "-" + salt;
-  const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
-  return `Iz${encoded}!1`;
-}
-
-async function sendViaResend(email: string, code: string): Promise<boolean> {
-  const apiKey = Deno.env.get("RESEND_API_KEY");
-  if (!apiKey) {
-    console.error("[send-otp] RESEND_API_KEY is not set");
-    return false;
-  }
-  try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "onboarding@resend.dev",
-        to: email,
-        subject: "Your Verification Code",
-        html: `<h2>Verification Code</h2><p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
-      }),
-    });
-
-    if (!response.ok) {
-      let errorBody: string;
-      try {
-        const errorData = await response.json();
-        errorBody = JSON.stringify(errorData);
-      } catch {
-        errorBody = await response.text();
-      }
-      console.error("Resend error:", response.status, errorBody);
-      return false;
-    }
-
-    const result = await response.json();
-    console.log(`[OTP] Email sent to ${email}, ID: ${result.id}`);
-    return true;
-  } catch (error) {
-    console.error("Resend fetch error:", error);
-    return false;
-  }
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
+  }
+
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 
   try {
@@ -75,10 +30,20 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const resendApiKey = Deno.env.get("RESEND_API_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error("[send-otp] Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const { count } = await supabase
@@ -116,27 +81,59 @@ serve(async (req) => {
       });
 
     if (insertError) {
-      console.error("OTP insert error:", insertError);
+      console.error("[send-otp] OTP insert error:", insertError);
       return new Response(
         JSON.stringify({ error: "Failed to generate code" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const emailSent = await sendViaResend(email, code);
+    let emailSent = false;
+    if (resendApiKey) {
+      try {
+        const response = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${resendApiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: "onboarding@resend.dev",
+            to: email,
+            subject: "Your Isizuo Verification Code",
+            html: `<h2>Verification Code</h2><p>Your verification code is: <strong>${code}</strong></p><p>This code expires in 10 minutes.</p>`,
+          }),
+        });
 
-    if (!emailSent) {
-      console.warn(`[OTP] Failed to send email to ${email}, but code was stored`);
+        if (response.ok) {
+          const result = await response.json();
+          console.log(`[send-otp] Email sent to ${email}, ID: ${result.id}`);
+          emailSent = true;
+        } else {
+          let errorBody: string;
+          try {
+            const errorData = await response.json();
+            errorBody = JSON.stringify(errorData);
+          } catch {
+            errorBody = await response.text();
+          }
+          console.error("[send-otp] Resend error:", response.status, errorBody);
+        }
+      } catch (err) {
+        console.error("[send-otp] Resend fetch error:", err);
+      }
+    } else {
+      console.warn("[send-otp] RESEND_API_KEY not set — code stored but email not sent");
     }
 
-    console.log(`[OTP] Generated code for ${email}: ${code}`);
+    console.log(`[send-otp] Generated code for ${email}: ${code}`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Verification code sent" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
-    console.error("send-otp error:", error);
+    console.error("[send-otp] error:", error);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
