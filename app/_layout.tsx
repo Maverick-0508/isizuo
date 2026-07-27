@@ -15,6 +15,7 @@ import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { fetchUserProfile } from '@/stores';
 
 const FOCUS_CSS = `
   *:focus-visible {
@@ -54,7 +55,7 @@ function injectGlobalStyles() {
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuthStore();
-  const segments = useSegments();
+  const segments = useSegments() as string[];
   const router = useRouter();
   const hasNavigated = React.useRef(false);
 
@@ -70,7 +71,8 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
         router.replace('/(auth)');
       }
     } else if (isAuthenticated && inAuthGroup) {
-      if (!hasNavigated.current || inAuthGroup) {
+      const inOnboarding = segments[1] === 'onboarding';
+      if (!inOnboarding && (!hasNavigated.current || inAuthGroup)) {
         hasNavigated.current = true;
         router.replace('/(tabs)');
       }
@@ -95,16 +97,26 @@ export default function RootLayout() {
   useEffect(() => {
     injectGlobalStyles();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
-      setUser((session?.user as unknown as User) || null);
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        setUser(profile);
+      } else {
+        setUser(null);
+      }
     }).catch(() => {}).finally(() => {
       setReady(true);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
-      setUser((session?.user as unknown as User) || null);
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        setUser(profile);
+      } else {
+        setUser(null);
+      }
     });
 
     return () => {

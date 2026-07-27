@@ -42,6 +42,8 @@ export async function verifyOTP(
   code: string
 ): Promise<{ session: any; user: any } | null> {
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
     const res = await fetch(`${EDGE_FUNCTION_BASE}/verify-otp`, {
       method: 'POST',
       headers: {
@@ -49,12 +51,18 @@ export async function verifyOTP(
         Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({ email, code }),
+      signal: controller.signal,
     });
+    clearTimeout(timeoutId);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Verification failed');
     return { session: data.session, user: data.user };
-  } catch (error) {
-    console.error('[OTP] verifyOTP failed:', error);
+  } catch (error: any) {
+    if (error?.name === 'AbortError') {
+      console.error('[OTP] verifyOTP timed out');
+    } else {
+      console.error('[OTP] verifyOTP failed:', error);
+    }
     return null;
   }
 }

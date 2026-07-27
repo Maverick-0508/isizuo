@@ -3,6 +3,75 @@ import { User, Match, Message, Event, Community, SafetyCheckIn, Report, Language
 import { supabase } from '@/lib/supabase';
 import { sendOTP, verifyOTP } from '@/services/sms';
 
+function mapDbProfileToUser(row: any): User {
+  return {
+    id: row.id,
+    email: row.email || '',
+    phone: row.phone || '',
+    name: row.name || '',
+    age: row.age || 0,
+    gender: row.gender || 'other',
+    bio: row.bio || '',
+    photos: row.photos || [],
+    languages: row.languages || [],
+    community: row.community || '',
+    religion: row.religion || '',
+    values: row.values || [],
+    interests: row.interests || [],
+    familyValues: row.family_values || 'balanced',
+    lookingFor: row.looking_for || 'relationship',
+    location: (row.latitude && row.longitude)
+      ? { latitude: row.latitude, longitude: row.longitude }
+      : '',
+    isVerified: row.is_verified || false,
+    isPhotoVerified: row.is_photo_verified || false,
+    kycLevel: row.kyc_level || 'none',
+    safetyScore: row.safety_score ?? 50,
+    credits: row.credits ?? 10,
+    boostedUntil: row.boosted_until || undefined,
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
+  };
+}
+
+function mapUserToDbUpdates(updates: Partial<User>): Record<string, any> {
+  const dbUpdates: Record<string, any> = {};
+  if (updates.name !== undefined) dbUpdates.name = updates.name;
+  if (updates.age !== undefined) dbUpdates.age = updates.age;
+  if (updates.gender !== undefined) dbUpdates.gender = updates.gender;
+  if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+  if (updates.photos !== undefined) dbUpdates.photos = updates.photos;
+  if (updates.languages !== undefined) dbUpdates.languages = updates.languages;
+  if (updates.community !== undefined) dbUpdates.community = updates.community;
+  if (updates.religion !== undefined) dbUpdates.religion = updates.religion;
+  if (updates.values !== undefined) dbUpdates.values = updates.values;
+  if (updates.interests !== undefined) dbUpdates.interests = updates.interests;
+  if (updates.familyValues !== undefined) dbUpdates.family_values = updates.familyValues;
+  if (updates.lookingFor !== undefined) dbUpdates.looking_for = updates.lookingFor;
+  if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
+  if (updates.isVerified !== undefined) dbUpdates.is_verified = updates.isVerified;
+  if (updates.isPhotoVerified !== undefined) dbUpdates.is_photo_verified = updates.isPhotoVerified;
+  if (updates.kycLevel !== undefined) dbUpdates.kyc_level = updates.kycLevel;
+  if (updates.safetyScore !== undefined) dbUpdates.safety_score = updates.safetyScore;
+  if (updates.credits !== undefined) dbUpdates.credits = updates.credits;
+  if (updates.boostedUntil !== undefined) dbUpdates.boosted_until = updates.boostedUntil;
+  if (updates.location !== undefined && typeof updates.location === 'object' && updates.location !== null) {
+    dbUpdates.latitude = (updates.location as any).latitude;
+    dbUpdates.longitude = (updates.location as any).longitude;
+  }
+  return dbUpdates;
+}
+
+export async function fetchUserProfile(userId: string): Promise<User | null> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+  if (error || !data) return null;
+  return mapDbProfileToUser(data);
+}
+
 interface AuthState {
   user: User | null;
   session: any;
@@ -45,9 +114,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           access_token: result.session.access_token,
           refresh_token: result.session.refresh_token,
         });
+        const profile = await fetchUserProfile(result.session.user.id);
         set({
           session: result.session,
-          user: result.session.user as unknown as User,
+          user: profile,
           isAuthenticated: true,
         });
         return true;
@@ -72,9 +142,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     const { user } = get();
     if (!user) return;
     try {
+      const dbUpdates = mapUserToDbUpdates(updates);
+      if (Object.keys(dbUpdates).length === 0) return;
       const { error } = await supabase
         .from('profiles')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', user.id);
       if (error) throw error;
       set({ user: { ...user, ...updates } });
@@ -188,10 +260,13 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
         .limit(50);
       if (error) throw error;
 
-      const scored = (data || []).map((profile: any) => ({
-        ...profile,
-        _compatibilityScore: calculateCompatibility(user, profile),
-      }));
+      const scored = (data || []).map((profile: any) => {
+        const mapped = mapDbProfileToUser(profile);
+        return {
+          ...mapped,
+          _compatibilityScore: calculateCompatibility(user, mapped),
+        };
+      });
 
       scored.sort((a: any, b: any) => b._compatibilityScore - a._compatibilityScore);
 
@@ -226,7 +301,7 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
           status: 'matched' as const,
           initiatedBy: m.user_1,
           createdAt: m.created_at,
-          otherUser: otherProfile,
+          otherUser: otherProfile ? mapDbProfileToUser(otherProfile) : undefined,
         } as Match;
       });
 

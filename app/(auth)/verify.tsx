@@ -8,6 +8,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  Keyboard,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, FONTS } from '@/constants';
@@ -24,6 +25,19 @@ export default function VerifyScreen() {
   const inputRefs = useRef<(TextInput | null)[]>([]);
 
   const handleOtpChange = (value: string, index: number) => {
+    if (value.length > 1) {
+      const pasted = value.replace(/\D/g, '').slice(0, 6).split('');
+      const newOtp = [...otp];
+      pasted.forEach((char, i) => {
+        if (index + i < 6) newOtp[index + i] = char;
+      });
+      setOtp(newOtp);
+      const nextEmpty = newOtp.findIndex((d, i) => i >= index && d === '');
+      const focusIdx = nextEmpty !== -1 ? nextEmpty : 5;
+      inputRefs.current[focusIdx]?.focus();
+      return;
+    }
+
     const newOtp = [...otp];
     newOtp[index] = value;
     setOtp(newOtp);
@@ -40,6 +54,7 @@ export default function VerifyScreen() {
   };
 
   const handleVerify = async () => {
+    Keyboard.dismiss();
     const otpString = otp.join('');
     if (otpString.length !== 6) {
       Alert.alert('Error', 'Please enter the complete verification code');
@@ -50,7 +65,12 @@ export default function VerifyScreen() {
     try {
       const success = await verifyOtp(email || '', otpString);
       if (success) {
-        router.replace('/(tabs)');
+        const { user } = useAuthStore.getState();
+        if (user && !user.name) {
+          router.replace('/(auth)/onboarding');
+        } else {
+          router.replace('/(tabs)');
+        }
       } else {
         Alert.alert('Error', t('invalid_otp'));
       }
@@ -88,19 +108,19 @@ export default function VerifyScreen() {
         </View>
 
         <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref: TextInput | null) => { inputRefs.current[index] = ref; }}
-              style={[styles.otpInput, digit ? styles.otpInputFilled : null]}
-              value={digit}
-              onChangeText={(value) => handleOtpChange(value, index)}
-              onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
-              keyboardType="number-pad"
-              maxLength={1}
-              selectTextOnFocus
-            />
-          ))}
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref: TextInput | null) => { inputRefs.current[index] = ref; }}
+                style={[styles.otpInput, digit ? styles.otpInputFilled : null]}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(value, index)}
+                onKeyPress={({ nativeEvent }) => handleKeyPress(nativeEvent.key, index)}
+                keyboardType="number-pad"
+                maxLength={1}
+                selectTextOnFocus
+              />
+            ))}
         </View>
 
         <View style={styles.buttonContainer}>

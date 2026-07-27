@@ -1,4 +1,4 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -10,12 +10,24 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+function derivePassword(email: string): string {
+  const salt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
+  const raw = email + "-" + salt;
+  const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
+  return `Iz${encoded}!1`;
+}
+
 async function sendViaResend(email: string, code: string): Promise<boolean> {
+  const apiKey = Deno.env.get("RESEND_API_KEY");
+  if (!apiKey) {
+    console.error("[send-otp] RESEND_API_KEY is not set");
+    return false;
+  }
   try {
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${Deno.env.get("RESEND_API_KEY")}`,
+        "Authorization": `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -27,8 +39,14 @@ async function sendViaResend(email: string, code: string): Promise<boolean> {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      console.error("Resend error:", error);
+      let errorBody: string;
+      try {
+        const errorData = await response.json();
+        errorBody = JSON.stringify(errorData);
+      } catch {
+        errorBody = await response.text();
+      }
+      console.error("Resend error:", response.status, errorBody);
       return false;
     }
 
@@ -39,13 +57,6 @@ async function sendViaResend(email: string, code: string): Promise<boolean> {
     console.error("Resend fetch error:", error);
     return false;
   }
-}
-
-function derivePassword(email: string): string {
-  const salt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
-  const raw = email + "-" + salt;
-  const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
-  return `Iz${encoded}!1`;
 }
 
 serve(async (req) => {
@@ -68,6 +79,29 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    const { count } = await supabase
+      .from("otp_codes")
+      .select("*", { count: "exact", head: true })
+      .eq("email", email)
+      .gte("created_at", fiveMinAgo);
+
+    if (count && count >= 3) {
+      return new Response(
+        JSON.stringify({ error: "Too many requests. Please wait a few minutes." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { error: cleanupError } = await supabase
+      .from("otp_codes")
+      .delete()
+      .eq("email", email)
+      .eq("used", true);
+    if (cleanupError) {
+      console.warn("[send-otp] Cleanup error:", cleanupError);
+    }
+
     const code = generateOTP();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
@@ -88,7 +122,6 @@ serve(async (req) => {
       );
     }
 
-    // Send email via Resend
     const emailSent = await sendViaResend(email, code);
 
     if (!emailSent) {
@@ -98,7 +131,7 @@ serve(async (req) => {
     console.log(`[OTP] Generated code for ${email}: ${code}`);
 
     return new Response(
-      JSON.stringify({ success: true, message: "Verification code sent", code: code }),
+      JSON.stringify({ success: true, message: "Verification code sent" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {

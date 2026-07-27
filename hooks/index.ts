@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Platform } from 'react-native';
 import * as Location from 'expo-location';
 import { useAppStore } from '@/stores';
 import i18n from '@/i18n';
@@ -24,16 +25,27 @@ export function useLocation() {
 
   useEffect(() => {
     (async () => {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        setIsLoading(false);
-        return;
-      }
+      try {
+        if (Platform.OS === 'web' && typeof navigator !== 'undefined' && !navigator.geolocation) {
+          setErrorMsg('Geolocation is not supported by this browser');
+          setIsLoading(false);
+          return;
+        }
 
-      const loc = await Location.getCurrentPositionAsync({});
-      setLocation(loc);
-      setIsLoading(false);
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== 'granted') {
+          setErrorMsg('Permission to access location was denied');
+          setIsLoading(false);
+          return;
+        }
+
+        const loc = await Location.getCurrentPositionAsync({});
+        setLocation(loc);
+      } catch (e) {
+        setErrorMsg('Failed to get location');
+      } finally {
+        setIsLoading(false);
+      }
     })();
   }, []);
 
