@@ -38,20 +38,9 @@ export default function LoginScreen() {
       const redirectUrl = typeof window !== 'undefined'
         ? window.location.origin
         : 'https://isizuo.vercel.app';
-      const { data, error: authError } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          skipBrowserRedirect: false,
-        },
-      });
-      if (authError) {
-        Alert.alert('Error', authError.message);
-        return;
-      }
-      if (data?.url) {
-        window.location.href = data.url;
-      }
+      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
+      const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
+      window.location.href = authUrl;
     } catch (err: any) {
       console.error('[GoogleSignIn]', err);
       Alert.alert('Error', err?.message || 'Google sign-in failed. Please try again.');
