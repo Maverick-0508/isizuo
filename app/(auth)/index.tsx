@@ -38,15 +38,23 @@ export default function LoginScreen() {
       const redirectUrl = typeof window !== 'undefined'
         ? window.location.origin
         : 'https://isizuo.vercel.app';
-      const { error: authError } = await supabase.auth.signInWithOAuth({
+      const { data, error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: redirectUrl },
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: false,
+        },
       });
       if (authError) {
         Alert.alert('Error', authError.message);
+        return;
       }
-    } catch (err) {
-      Alert.alert('Error', 'Google sign-in failed. Please try again.');
+      if (data?.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: any) {
+      console.error('[GoogleSignIn]', err);
+      Alert.alert('Error', err?.message || 'Google sign-in failed. Please try again.');
     }
   };
 
