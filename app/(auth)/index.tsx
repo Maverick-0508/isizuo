@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,7 +7,6 @@ import { useTranslation } from '@/hooks';
 import { useAuthStore } from '@/stores';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
-import { supabase } from '@/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -19,31 +18,17 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSendOTP = async () => {
+  const handleContinue = async () => {
     if (!email.trim()) return;
     setError('');
     setIsLoading(true);
     try {
       await signIn(email.trim());
-      router.push({ pathname: '/(auth)/verify', params: { email: email.trim() } });
+      router.replace('/(tabs)');
     } catch (err) {
-      setError(t('error'));
+      setError(err instanceof Error ? err.message : t('error'));
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      const redirectUrl = typeof window !== 'undefined'
-        ? window.location.origin + '/auth-callback'
-        : 'https://isizuo.vercel.app/auth-callback';
-      const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
-      const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
-      window.location.href = authUrl;
-    } catch (err: any) {
-      console.error('[GoogleSignIn]', err);
-      Alert.alert('Error', err?.message || 'Google sign-in failed. Please try again.');
     }
   };
 
@@ -124,7 +109,7 @@ export default function LoginScreen() {
 
             <Button
               title={t('continue_with_email')}
-              onPress={handleSendOTP}
+              onPress={handleContinue}
               variant="gradient"
               size="lg"
               fullWidth
@@ -132,17 +117,6 @@ export default function LoginScreen() {
               disabled={!email.trim()}
               icon="arrow-forward"
             />
-
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>{t('or')}</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <TouchableOpacity onPress={handleGoogleSignIn} style={styles.socialBtn} accessibilityRole="button" accessibilityLabel={t('continue_with_google')} accessibilityHint={t('email_description')}>
-              <Ionicons name="logo-google" size={22} color="#DB4437" />
-              <Text style={styles.socialBtnText}>{t('continue_with_google')}</Text>
-            </TouchableOpacity>
 
             <Text style={styles.terms}>
               {t('by_continuing')}{' '}
@@ -260,19 +234,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: SPACING.md,
   },
   errorText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.medium, color: COLORS.danger },
-
-  dividerRow: {
-    flexDirection: 'row', alignItems: 'center', marginVertical: SPACING.lg, gap: SPACING.md,
-  },
-  dividerLine: { flex: 1, height: 1, backgroundColor: COLORS.border },
-  dividerText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.medium, color: COLORS.textLight },
-
-  socialBtn: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: SPACING.md,
-    paddingVertical: 16, borderRadius: BORDER_RADIUS.lg,
-    backgroundColor: COLORS.background, ...SHADOWS.sm,
-  },
-  socialBtnText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text },
 
   terms: {
     fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight,

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { User, Match, Message, Event, Community, SafetyCheckIn, Report, Language } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { sendOTP, verifyOTP } from '@/services/sms';
 
 function mapDbProfileToUser(row: any): User {
   return {
@@ -80,7 +79,6 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setSession: (session: any) => void;
   signIn: (email: string) => Promise<void>;
-  verifyOtp: (email: string, token: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
 }
@@ -96,50 +94,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (email: string) => {
     try {
-      const result = await sendOTP(email);
-      if (!result?.success) {
-        throw new Error('Failed to send verification code');
+      const res = await fetch(
+        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/auto-signin`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ email }),
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Sign in failed');
+
+      await supabase.auth.setSession({
+        access_token: data.session.access_token,
+        refresh_token: data.session.refresh_token,
+      });
+
+      let profile = await fetchUserProfile(data.session.user.id);
+      if (!profile) {
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.session.user.id,
+            email,
+            name: '',
+          });
+        if (!insertError) {
+          profile = await fetchUserProfile(data.session.user.id);
+        }
       }
+
+      set({
+        session: data.session,
+        user: profile,
+        isAuthenticated: true,
+      });
     } catch (error) {
       console.error('Sign in error:', error);
       throw error;
-    }
-  },
-
-  verifyOtp: async (email: string, token: string) => {
-    try {
-      const result = await verifyOTP(email, token);
-      if (result?.session) {
-        await supabase.auth.setSession({
-          access_token: result.session.access_token,
-          refresh_token: result.session.refresh_token,
-        });
-        let profile = await fetchUserProfile(result.session.user.id);
-
-        if (!profile) {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: result.session.user.id,
-              email: email,
-              name: '',
-            });
-          if (!insertError) {
-            profile = await fetchUserProfile(result.session.user.id);
-          }
-        }
-
-        set({
-          session: result.session,
-          user: profile,
-          isAuthenticated: true,
-        });
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Verify OTP error:', error);
-      return false;
     }
   },
 
