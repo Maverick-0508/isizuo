@@ -1,9 +1,0 @@
-{
-  "compilerOptions": {
-    "strict": true,
-    "noEmit": true,
-    "lib": ["deno.ns"],
-    "types": ["deno.ns"]
-  },
-  "include": ["./**/*.ts"]
-}
