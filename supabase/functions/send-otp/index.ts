@@ -42,7 +42,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.0");
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();

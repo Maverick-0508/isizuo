@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2");
+    const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.0");
     const supabase = createClient(supabaseUrl, serviceRoleKey);
 
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
@@ -74,7 +74,23 @@ Deno.serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    if (otpError || !otpRecord) {
+    if (otpError) {
+      console.error("[verify-otp] DB query error:", otpError.message, otpError.code, otpError.details);
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired code", detail: otpError.message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (!otpRecord) {
+      const { data: debugRows } = await supabase
+        .from("otp_codes")
+        .select("id, email, code, expires_at, used")
+        .eq("email", email)
+        .order("created_at", { ascending: false })
+        .limit(5);
+      console.error("[verify-otp] No match found. All rows for email:", JSON.stringify(debugRows));
+      console.error("[verify-otp] Incoming code:", JSON.stringify(code), "trimmed:", JSON.stringify(code.trim()));
       return new Response(
         JSON.stringify({ error: "Invalid or expired code" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -86,25 +102,21 @@ Deno.serve(async (req) => {
       .update({ used: true })
       .eq("id", otpRecord.id);
 
-    const { data: existingUser } = await supabase.auth.admin.getUserByEmail(email);
-
     const raw = email + "-" + authSalt;
     const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");
     const password = `Iz${encoded}!1`;
 
-    if (!existingUser?.user) {
-      const { error: createError } = await supabase.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-      });
-      if (createError) {
-        console.error("[verify-otp] Create user error:", createError);
-        return new Response(
-          JSON.stringify({ error: "Failed to create account" }),
-          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
+    const { error: createError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    });
+    if (createError && !createError.message?.includes("already")) {
+      console.error("[verify-otp] Create user error:", createError);
+      return new Response(
+        JSON.stringify({ error: "Failed to create account" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     const supabaseAnon = createClient(supabaseUrl, anonKey);
