@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
       .from("otp_codes")
       .delete()
       .eq("email", email)
-      .eq("used", true);
+      .or("used.eq.true,expires_at.lt." + new Date().toISOString());
     if (cleanupError) {
       console.warn("[send-otp] Cleanup error:", cleanupError);
     }
