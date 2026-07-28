@@ -99,29 +99,49 @@ export default function RootLayout() {
   useEffect(() => {
     injectGlobalStyles();
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        let profile = await fetchUserProfile(session.user.id);
-        if (!profile) {
-          const { error: insertError } = await supabase
-            .from('profiles')
-            .insert({
-              id: session.user.id,
-              email: session.user.email || '',
-              name: session.user.user_metadata?.full_name || '',
+    async function initAuth() {
+      try {
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
+        const hasTokens = hash.includes('access_token=');
+
+        if (hasTokens) {
+          const params = new URLSearchParams(hash.replace('#', '?'));
+          const accessToken = params.get('access_token');
+          const refreshToken = params.get('refresh_token');
+          if (accessToken && refreshToken) {
+            await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken,
             });
-          if (!insertError) {
-            profile = await fetchUserProfile(session.user.id);
           }
+          window.history.replaceState(null, '', window.location.pathname);
         }
-        setUser(profile);
-      } else {
-        setUser(null);
-      }
-    }).catch(() => {}).finally(() => {
+
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        if (session?.user) {
+          let profile = await fetchUserProfile(session.user.id);
+          if (!profile) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: session.user.id,
+                email: session.user.email || '',
+                name: session.user.user_metadata?.full_name || '',
+              });
+            if (!insertError) {
+              profile = await fetchUserProfile(session.user.id);
+            }
+          }
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+      } catch (_) {}
       setReady(true);
-    });
+    }
+
+    initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
