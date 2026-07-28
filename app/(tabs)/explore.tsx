@@ -416,8 +416,8 @@ const styles = StyleSheet.create({
   headerCenter: { flex: 1, alignItems: 'center' },
   headerTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.6 },
   filterBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.surface, alignItems: 'center', justifyContent: 'center', ...SHADOWS.sm },
-  categoriesScroll: { marginTop: SPACING.sm },
-  categoriesContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm },
+  categoriesScroll: { marginTop: SPACING.sm, maxHeight: 48 },
+  categoriesContent: { paddingHorizontal: SPACING.lg, gap: SPACING.sm, alignItems: 'center' },
   categoryPill: {
     flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 18, paddingVertical: 12,
     borderRadius: BORDER_RADIUS.full, backgroundColor: COLORS.surface, ...SHADOWS.sm,
