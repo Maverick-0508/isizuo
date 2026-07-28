@@ -36,8 +36,8 @@ export default function LoginScreen() {
   const handleGoogleSignIn = async () => {
     try {
       const redirectUrl = typeof window !== 'undefined'
-        ? window.location.origin
-        : 'https://isizuo.vercel.app';
+        ? window.location.origin + '/auth-callback'
+        : 'https://isizuo.vercel.app/auth-callback';
       const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
       const authUrl = `${supabaseUrl}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(redirectUrl)}`;
       window.location.href = authUrl;

@@ -101,22 +101,6 @@ export default function RootLayout() {
 
     async function initAuth() {
       try {
-        const hash = typeof window !== 'undefined' ? window.location.hash : '';
-        const hasTokens = hash.includes('access_token=');
-
-        if (hasTokens) {
-          const params = new URLSearchParams(hash.replace('#', '?'));
-          const accessToken = params.get('access_token');
-          const refreshToken = params.get('refresh_token');
-          if (accessToken && refreshToken) {
-            await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken,
-            });
-          }
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-
         const { data: { session } } = await supabase.auth.getSession();
         setSession(session);
         if (session?.user) {
