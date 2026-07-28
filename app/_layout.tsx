@@ -102,7 +102,19 @@ export default function RootLayout() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
+        let profile = await fetchUserProfile(session.user.id);
+        if (!profile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.full_name || '',
+            });
+          if (!insertError) {
+            profile = await fetchUserProfile(session.user.id);
+          }
+        }
         setUser(profile);
       } else {
         setUser(null);
@@ -114,7 +126,19 @@ export default function RootLayout() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       if (session?.user) {
-        const profile = await fetchUserProfile(session.user.id);
+        let profile = await fetchUserProfile(session.user.id);
+        if (!profile) {
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: session.user.id,
+              email: session.user.email || '',
+              name: session.user.user_metadata?.full_name || '',
+            });
+          if (!insertError) {
+            profile = await fetchUserProfile(session.user.id);
+          }
+        }
         setUser(profile);
       } else {
         setUser(null);

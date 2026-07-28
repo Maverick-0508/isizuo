@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,7 @@ import { useTranslation } from '@/hooks';
 import { useAuthStore } from '@/stores';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
+import { supabase } from '@/lib/supabase';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +30,23 @@ export default function LoginScreen() {
       setError(t('error'));
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      const redirectUrl = typeof window !== 'undefined'
+        ? window.location.origin
+        : 'https://isizuo.vercel.app';
+      const { error: authError } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: redirectUrl },
+      });
+      if (authError) {
+        Alert.alert('Error', authError.message);
+      }
+    } catch (err) {
+      Alert.alert('Error', 'Google sign-in failed. Please try again.');
     }
   };
 
@@ -124,7 +142,7 @@ export default function LoginScreen() {
               <View style={styles.dividerLine} />
             </View>
 
-            <TouchableOpacity style={styles.socialBtn} accessibilityRole="button" accessibilityLabel={t('continue_with_google')} accessibilityHint={t('email_description')}>
+            <TouchableOpacity onPress={handleGoogleSignIn} style={styles.socialBtn} accessibilityRole="button" accessibilityLabel={t('continue_with_google')} accessibilityHint={t('email_description')}>
               <Ionicons name="logo-google" size={22} color="#DB4437" />
               <Text style={styles.socialBtnText}>{t('continue_with_google')}</Text>
             </TouchableOpacity>
