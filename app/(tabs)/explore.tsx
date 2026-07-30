@@ -34,14 +34,6 @@ const AVATAR_GRADIENTS: readonly (readonly [string, string])[] = [
   ['#00B894', '#00CEC9'],
 ];
 
-const SAMPLE_PROFILES = [
-  { id: '1', name: 'Amara', age: 26, location: 'Lagos, Nigeria', bio: 'Software Engineer who loves to travel and cook traditional meals. Looking for someone adventurous.', community: 'Yoruba', isVerified: true, isPremium: true, distance: '2 km', interests: ['Tech', 'Travel', 'Cooking'], isActive: true, compatibility: 92 },
-  { id: '2', name: 'Zainab', age: 24, location: 'Nairobi, Kenya', bio: 'Medical student with a passion for community health and cultural exchange.', community: 'Swahili', isVerified: true, isPremium: false, distance: '5 km', interests: ['Reading', 'Fitness', 'Music'], isActive: false, lastActive: '2h ago', compatibility: 87 },
-  { id: '3', name: 'Fatima', age: 28, location: 'Addis Ababa, Ethiopia', bio: 'Architect designing the future of African cities. Love art and photography.', community: 'Amhara', isVerified: false, isPremium: true, distance: '8 km', interests: ['Art', 'Photography', 'Fashion'], isActive: true, compatibility: 84 },
-  { id: '4', name: 'Ngozi', age: 25, location: 'Abuja, Nigeria', bio: 'Lawyer by day, dancer by night. Family is everything to me.', community: 'Igbo', isVerified: true, isPremium: true, distance: '12 km', interests: ['Law', 'Dance', 'Cooking'], isActive: false, lastActive: '30m ago', compatibility: 91 },
-  { id: '5', name: 'Aisha', age: 27, location: 'Johannesburg, SA', bio: 'Building the next big thing in fintech. Love live music and sunsets.', community: 'Zulu', isVerified: true, isPremium: false, distance: '3 km', interests: ['Business', 'Travel', 'Music'], isActive: true, compatibility: 88 },
-];
-
 export default function ExploreScreen() {
   const { t } = useTranslation();
   const { potentialMatches, isLoading, fetchPotentialMatches, likeUser, passUser, superLikeUser } = useMatchingStore();

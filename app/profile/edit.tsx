@@ -128,19 +128,63 @@ export default function EditProfileScreen() {
     }
   };
 
+  const uploadKycFile = async (uri: string, userId: string, prefix: string): Promise<string | null> => {
+    const { supabase } = await import('@/lib/supabase');
+    const ext = uri.split('.').pop() || 'jpg';
+    const fileName = `${prefix}_${Date.now()}.${ext}`;
+    const filePath = `${userId}/${fileName}`;
+
+    const response = await fetch(uri);
+    const blob = await response.blob();
+
+    const { error } = await supabase.storage.from('kyc-documents').upload(filePath, blob, {
+      contentType: `image/${ext === 'png' ? 'png' : 'jpeg'}`,
+      upsert: false,
+    });
+    if (error) throw error;
+    return filePath;
+  };
+
   const handleSubmitKyc = async () => {
-    if (!selfieUri || !idFrontUri) {
+    if (!selfieUri || !idFrontUri || !user) {
       Alert.alert('Incomplete', 'Please provide both a selfie and ID photo.');
       return;
     }
     setKycStep('submitting');
-    setKycProgress(75);
+    setKycProgress(30);
 
-    setTimeout(() => {
-      setKycStep('success');
+    try {
+      const selfiePath = await uploadKycFile(selfieUri, user.id, 'selfie');
+      setKycProgress(55);
+
+      const idPath = await uploadKycFile(idFrontUri, user.id, 'id_front');
+      setKycProgress(80);
+
+      const { supabase } = await import('@/lib/supabase');
+      await supabase.from('kyc_submissions').insert({
+        user_id: user.id,
+        selfie_url: selfiePath,
+        id_url: idPath,
+        status: 'pending',
+      });
+
+      await supabase.from('profiles').update({
+        kyc_level: 'pending',
+        is_photo_verified: false,
+      }).eq('id', user.id);
+
       setKycProgress(100);
-      Alert.alert('Verification Submitted', 'Your KYC documents have been submitted for review. You will be notified once verified.');
-    }, 2000);
+      setKycStep('success');
+
+      const { updateProfile } = useAuthStore.getState();
+      updateProfile({ kycLevel: 'pending', isPhotoVerified: false });
+
+      Alert.alert('Verification Submitted', 'Your documents have been received. We will notify you once verified.');
+    } catch (e) {
+      Alert.alert('Upload Failed', 'There was an error submitting your documents. Please try again.');
+      setKycStep('idle');
+      setKycProgress(0);
+    }
   };
 
   const resetKyc = () => {

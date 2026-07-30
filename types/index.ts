@@ -39,7 +39,7 @@ export interface User {
   isVerified: boolean;
   isPhotoVerified: boolean;
   isPremium?: boolean;
-  kycLevel: 'none' | 'phone' | 'id' | 'full';
+  kycLevel: 'none' | 'phone' | 'id' | 'full' | 'pending';
   safetyScore: number;
   boostedUntil?: string;
   credits: number;

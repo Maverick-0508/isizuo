@@ -6,13 +6,14 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
-import { sendOTP } from '@/services/sms';
+import { useAuthStore } from '@/stores';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { signIn } = useAuthStore();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,10 +23,7 @@ export default function LoginScreen() {
     setError('');
     setIsLoading(true);
     try {
-      const result = await sendOTP(email.trim());
-      if (!result || !result.success) {
-        throw new Error(result?.message || 'Failed to send code');
-      }
+      await signIn(email.trim());
       Alert.alert(t('otp_sent'), t('enter_otp'));
       router.push(`/(auth)/verify?email=${encodeURIComponent(email.trim())}`);
     } catch (err) {

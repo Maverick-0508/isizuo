@@ -1,7 +1,5 @@
 import { supabase } from '@/lib/supabase';
 
-const EDGE_FUNCTION_BASE = `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1`;
-
 export async function sendSMS(phone: string, message: string): Promise<boolean> {
   try {
     const { error } = await supabase.functions.invoke('send-sms', {
@@ -13,57 +11,6 @@ export async function sendSMS(phone: string, message: string): Promise<boolean> 
   } catch (error) {
     console.error('[SMS] Send error:', error);
     return false;
-  }
-}
-
-export async function sendOTP(
-  email: string
-): Promise<{ success: boolean; message: string } | null> {
-  try {
-    const res = await fetch(`${EDGE_FUNCTION_BASE}/send-otp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ email }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Failed to send OTP');
-    return { success: true, message: data.message || 'Code sent' };
-  } catch (error) {
-    console.error('[OTP] sendOTP failed:', error);
-    return null;
-  }
-}
-
-export async function verifyOTP(
-  email: string,
-  code: string
-): Promise<{ session: any; user: any } | null> {
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
-    const res = await fetch(`${EDGE_FUNCTION_BASE}/verify-otp`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-      },
-      body: JSON.stringify({ email, code }),
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Verification failed');
-    return { session: data.session, user: data.user };
-  } catch (error: any) {
-    if (error?.name === 'AbortError') {
-      console.error('[OTP] verifyOTP timed out');
-    } else {
-      console.error('[OTP] verifyOTP failed:', error);
-    }
-    return null;
   }
 }
 

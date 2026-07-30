@@ -43,3 +43,6 @@ yarn-error.*
 .vercel
 .env
 supabase/.temp
+
+# Windows reserved names
+NUL

@@ -20,14 +20,7 @@ const AVATAR_GRADIENTS: readonly (readonly [string, string])[] = [
   ['#4A90D9', '#74B9FF'],
 ];
 
-const SAMPLE_MATCHES = [
-  { id: '1', name: 'Amara O.', age: 26, bio: 'Software Engineer', location: 'Lagos', isVerified: true, isPremium: true, interests: ['Tech', 'Travel', 'Cooking'], isActive: true, compatibility: 92 },
-  { id: '2', name: 'Zainab K.', age: 24, bio: 'Medical Student', location: 'Nairobi', isVerified: true, isPremium: false, interests: ['Reading', 'Fitness'], isActive: true, compatibility: 87 },
-  { id: '3', name: 'Fatima A.', age: 28, bio: 'Architect', location: 'Addis Ababa', isVerified: false, isPremium: true, interests: ['Art', 'Photography'], isActive: false, lastActive: '2h ago', compatibility: 84 },
-  { id: '4', name: 'Ngozi C.', age: 25, bio: 'Lawyer & Dancer', location: 'Abuja', isVerified: true, isPremium: true, interests: ['Law', 'Dance'], isActive: false, lastActive: '30m ago', compatibility: 91 },
-  { id: '5', name: 'Aisha M.', age: 27, bio: 'Entrepreneur', location: 'Johannesburg', isVerified: true, isPremium: false, interests: ['Business', 'Travel'], isActive: true, compatibility: 88 },
-  { id: '6', name: 'Chidera N.', age: 23, bio: 'Content Creator', location: 'Port Harcourt', isVerified: false, isPremium: false, interests: ['Photography', 'Film'], isActive: false, lastActive: '12h ago', compatibility: 79 },
-];
+
 
 export default function MatchesScreen() {
   const { t } = useTranslation();

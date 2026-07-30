@@ -5,7 +5,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from '@/hooks';
 import { useAuthStore } from '@/stores';
-import { sendOTP } from '@/services/sms';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
 
@@ -16,7 +15,7 @@ export default function VerifyScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
-  const { verifySignIn } = useAuthStore();
+  const { verifySignIn, signIn } = useAuthStore();
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -43,12 +42,8 @@ export default function VerifyScreen() {
     if (!email) return;
     setIsResending(true);
     try {
-      const result = await sendOTP(email);
-      if (result?.success) {
-        Alert.alert(t('otp_sent'), t('enter_otp'));
-      } else {
-        setError('Failed to resend code');
-      }
+      await signIn(email);
+      Alert.alert(t('otp_sent'), t('enter_otp'));
     } catch {
       setError('Failed to resend code');
     } finally {

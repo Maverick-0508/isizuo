@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { User, Match, Message, Event, Community, SafetyCheckIn, Report, Language } from '@/types';
 import { supabase } from '@/lib/supabase';
-import { verifyOTP } from '@/services/sms';
+import { uploadProfilePhotos } from '@/services/upload';
+import { clientThrottle, checkRateLimit } from '@/services/rateLimit';
 
 const PUBLIC_PROFILE_COLUMNS = 'id, name, age, gender, bio, photos, languages, community, religion, values, interests, prompts, family_values, looking_for, is_verified, is_photo_verified, kyc_level, safety_score, credits, referral_code, boosted_until, created_at, updated_at';
 
@@ -110,88 +111,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setSession: (session) => set({ session }),
 
   signIn: async (email: string) => {
-    try {
-      const res = await fetch(
-        `${process.env.EXPO_PUBLIC_SUPABASE_URL}/functions/v1/auto-signin`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Sign in failed');
-
-      await supabase.auth.setSession({
-        access_token: data.session.access_token,
-        refresh_token: data.session.refresh_token,
-      });
-
-      let profile = await fetchUserProfile(data.session.user.id);
-      if (!profile) {
-        const referralCode = email.split('@')[0].slice(0, 6).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: data.session.user.id,
-            email,
-            name: '',
-            referral_code: referralCode,
-          });
-        if (!insertError) {
-          profile = await fetchUserProfile(data.session.user.id);
-        }
-      }
-
-      set({
-        session: data.session,
-        user: profile,
-        isAuthenticated: true,
-      });
-    } catch (error) {
-      console.error('Sign in error:', error);
-      throw error;
-    }
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    if (error) throw error;
   },
 
   verifySignIn: async (email: string, code: string) => {
-    try {
-      const result = await verifyOTP(email, code);
-      if (!result) throw new Error('Verification failed. Please try again.');
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token: code,
+      type: 'email',
+    });
+    if (error || !data.session) throw new Error('Invalid or expired code');
 
-      await supabase.auth.setSession({
-        access_token: result.session.access_token,
-        refresh_token: result.session.refresh_token,
-      });
+    await supabase.auth.setSession({
+      access_token: data.session.access_token,
+      refresh_token: data.session.refresh_token,
+    });
 
-      let profile = await fetchUserProfile(result.session.user.id);
-      if (!profile) {
-        const referralCode = email.split('@')[0].slice(0, 6).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
-        const { error: insertError } = await supabase
-          .from('profiles')
-          .insert({
-            id: result.session.user.id,
-            email,
-            name: '',
-            referral_code: referralCode,
-          });
-        if (!insertError) {
-          profile = await fetchUserProfile(result.session.user.id);
-        }
+    let profile = await fetchUserProfile(data.session.user.id);
+    if (!profile) {
+      const referralCode = email.split('@')[0].slice(0, 6).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+      const { error: insertError } = await supabase
+        .from('profiles')
+        .insert({
+          id: data.session.user.id,
+          email,
+          name: '',
+          referral_code: referralCode,
+        });
+      if (!insertError) {
+        profile = await fetchUserProfile(data.session.user.id);
       }
-
-      set({
-        session: result.session,
-        user: profile,
-        isAuthenticated: true,
-      });
-    } catch (error) {
-      console.error('Verify sign in error:', error);
-      throw error;
     }
+
+    set({
+      session: data.session,
+      user: profile,
+      isAuthenticated: true,
+    });
   },
 
   signOut: async () => {
@@ -205,16 +165,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   updateProfile: async (updates: Partial<User>) => {
     const { user } = get();
-    if (!user) return;
+    if (!user) throw new Error('No authenticated user');
     try {
-      const dbUpdates = mapUserToDbUpdates(updates);
+      const finalUpdates = { ...updates };
+
+      if (updates.photos && updates.photos.length > 0) {
+        const uploaded = await uploadProfilePhotos(updates.photos, user.id);
+        if (uploaded.length > 0) {
+          finalUpdates.photos = uploaded;
+        }
+      }
+
+      const dbUpdates = mapUserToDbUpdates(finalUpdates);
       if (Object.keys(dbUpdates).length === 0) return;
       const { error } = await supabase
         .from('profiles')
         .update(dbUpdates)
         .eq('id', user.id);
       if (error) throw error;
-      set({ user: { ...user, ...updates } });
+      set({ user: { ...user, ...finalUpdates } });
     } catch (error) {
       console.error('Update profile error:', error);
     }
@@ -225,6 +194,7 @@ interface MatchingState {
   matches: Match[];
   potentialMatches: User[];
   likesReceived: User[];
+  blockedUsers: string[];
   currentMatchIndex: number;
   isLoading: boolean;
   setMatches: (matches: Match[]) => void;
@@ -235,12 +205,17 @@ interface MatchingState {
   fetchPotentialMatches: () => Promise<void>;
   fetchMatches: () => Promise<void>;
   fetchLikesReceived: () => Promise<void>;
+  blockUser: (userId: string) => Promise<void>;
+  unblockUser: (userId: string) => Promise<void>;
+  fetchBlockedUsers: () => Promise<void>;
+  isBlockedBy: (otherUserId: string) => Promise<boolean>;
 }
 
 export const useMatchingStore = create<MatchingState>((set, get) => ({
   matches: [],
   potentialMatches: [],
   likesReceived: [],
+  blockedUsers: [],
   currentMatchIndex: 0,
   isLoading: false,
 
@@ -250,6 +225,10 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
   likeUser: async (userId: string) => {
     const { user } = useAuthStore.getState();
     if (!user) return;
+    if (!clientThrottle('like')) return;
+    const allowed = await checkRateLimit(user.id, 'like', 30, 60);
+    if (!allowed) return;
+    if (await isBlocked(user.id, userId)) return;
     try {
       const { error } = await supabase.from('swipes').insert({
         swiper_id: user.id,
@@ -264,16 +243,17 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
         .eq('swiper_id', userId)
         .eq('swiped_id', user.id)
         .eq('action', 'like')
-        .single();
+        .maybeSingle();
 
       if (reverseSwipe) {
         const otherProfile = await fetchUserProfile(userId);
         const score = otherProfile ? calculateCompatibility(user, otherProfile) : 50;
-        await supabase.from('matches').insert({
+        const { error: matchError } = await supabase.from('matches').insert({
           user_1: user.id,
           user_2: userId,
           compatibility_score: score,
         });
+        if (matchError && matchError.code !== '23505') throw matchError;
       }
 
       set((state) => ({
@@ -287,6 +267,10 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
   passUser: async (userId: string) => {
     const { user } = useAuthStore.getState();
     if (!user) return;
+    if (!clientThrottle('pass')) return;
+    const allowed = await checkRateLimit(user.id, 'pass', 50, 60);
+    if (!allowed) return;
+    if (await isBlocked(user.id, userId)) return;
     try {
       await supabase.from('swipes').insert({
         swiper_id: user.id,
@@ -304,6 +288,7 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
   superLikeUser: async (userId: string) => {
     const { user } = useAuthStore.getState();
     if (!user) return;
+    if (!clientThrottle('super_like')) return;
     try {
       await supabase.from('swipes').insert({
         swiper_id: user.id,
@@ -323,11 +308,34 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
     if (!user) return;
     set({ isLoading: true });
     try {
-      const { data, error } = await supabase
+      const { data: swipeIds } = await supabase
+        .from('swipes')
+        .select('swiped_id')
+        .eq('swiper_id', user.id);
+      const { data: blockedByIds } = await supabase
+        .from('blocked_users')
+        .select('blocker_id')
+        .eq('blocked_id', user.id);
+      const { data: myBlockedIds } = await supabase
+        .from('blocked_users')
+        .select('blocked_id')
+        .eq('blocker_id', user.id);
+
+      const excludeIds = new Set<string>();
+      (swipeIds || []).forEach((s: any) => excludeIds.add(s.swiped_id));
+      (blockedByIds || []).forEach((b: any) => excludeIds.add(b.blocker_id));
+      (myBlockedIds || []).forEach((b: any) => excludeIds.add(b.blocked_id));
+      excludeIds.add(user.id);
+
+      const excludeIdList = Array.from(excludeIds);
+      let query = supabase
         .from('profiles')
         .select(PUBLIC_PROFILE_COLUMNS_WITH_LOCATION)
-        .neq('id', user.id)
         .limit(50);
+      if (excludeIdList.length > 0) {
+        query = query.not('id', 'in', `(${excludeIdList.join(',')})`);
+      }
+      const { data, error } = await query;
       if (error) throw error;
 
       const scored = (data || []).map((profile: any) => {
@@ -360,11 +368,12 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
       if (error) throw error;
 
       const matches = (data || []).map((m: any) => {
-        const otherProfile = m.user_1 === user.id ? m.user_2_profile : m.user_1_profile;
+        const isUser1 = m.user_1 === user.id;
+        const otherProfile = isUser1 ? m.user_2_profile : m.user_1_profile;
         return {
           id: m.id,
-          userId: m.user_1,
-          matchedUserId: m.user_2,
+          userId: user.id,
+          matchedUserId: isUser1 ? m.user_2 : m.user_1,
           compatibilityScore: m.compatibility_score ?? 0,
           culturalScore: 0,
           interestsScore: 0,
@@ -399,6 +408,57 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
     } catch (error) {
       console.error('Fetch likes error:', error);
     }
+  },
+
+  blockUser: async (userId: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      const { error } = await supabase.from('blocked_users').insert({
+        blocker_id: user.id,
+        blocked_id: userId,
+      });
+      if (error && error.code !== '23505') throw error;
+      set((state) => ({
+        blockedUsers: state.blockedUsers.includes(userId) ? state.blockedUsers : [...state.blockedUsers, userId],
+        potentialMatches: state.potentialMatches.filter((p) => p.id !== userId),
+        matches: state.matches.filter((m) => m.matchedUserId !== userId && m.userId !== userId),
+      }));
+    } catch (error) {
+      console.error('Block error:', error);
+    }
+  },
+
+  unblockUser: async (userId: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      await supabase.from('blocked_users')
+        .delete()
+        .eq('blocker_id', user.id)
+        .eq('blocked_id', userId);
+      set((state) => ({
+        blockedUsers: state.blockedUsers.filter((id) => id !== userId),
+      }));
+    } catch (error) {
+      console.error('Unblock error:', error);
+    }
+  },
+
+  fetchBlockedUsers: async () => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('blocked_users')
+        .select('blocked_id')
+        .eq('blocker_id', user.id);
+      set({ blockedUsers: (data || []).map((b: any) => b.blocked_id) });
+    } catch {}
+  },
+
+  isBlockedBy: async (otherUserId: string) => {
+    return isBlocked(useAuthStore.getState().user?.id || '', otherUserId);
   },
 }));
 
@@ -439,6 +499,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendMessage: async (matchId: string, content: string, type = 'text' as const) => {
     const { user } = useAuthStore.getState();
     if (!user) return;
+    if (!clientThrottle('message')) return;
 
     const moderationCheck = moderateContent(content);
     if (moderationCheck.flagged) {
@@ -449,6 +510,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
       return;
     }
+
+    const { data: match } = await supabase
+      .from('matches')
+      .select('user_1, user_2')
+      .eq('id', matchId)
+      .maybeSingle();
+    const otherUserId = match ? (match.user_1 === user.id ? match.user_2 : match.user_1) : null;
+    if (otherUserId && await isBlocked(user.id, otherUserId)) return;
 
     try {
       const { error } = await supabase.from('messages').insert({
@@ -526,19 +595,35 @@ function moderateContent(content: string): { flagged: boolean; reason?: string }
     /invest\s*\d+/i,
     /guaranteed\s*return/i,
     /credit\s*card/i,
+    /wire\s*(me\s*)?\$/i,
+    /paypal\s*me/i,
+    /cash\s*app/i,
+    /money\s*gram/i,
+    / bitcoin\b/i,
+    /crypto\b.*send/i,
   ];
 
   const harassmentPatterns = [
     /kill\s*yourself/i,
-    /you're\s*(ugly|stupid|worthless)/i,
-    /i'll\s*find\s*you/i,
-    /send\s*(me\s*)?(nudes|pics)/i,
+    /you'?re\s*(ugly|stupid|worthless|fat|disgusting)/i,
+    /i'?ll\s*find\s*you/i,
+    /send\s*(me\s*)?(nudes?|pics?|photos?)/i,
+    /\bdie\b/i,
+    /\bharm\b.*\byou\b/i,
+    /\brape\b/i,
+    /\bslut\b/i,
+    /\bwhore\b/i,
+    /\bnigga?\b/i,
+    /\bfag\b/i,
   ];
 
   const explicitPatterns = [
-    /explicit\s*content/i,
-    /sex\s*tape/i,
+    /\bonlyfans\b/i,
+    /\bsex\b.*\b(tape|video|chat)\b/i,
+    /\bnsfw\b/i,
   ];
+
+  const phonePattern = /\b(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}\b/;
 
   for (const pattern of scamPatterns) {
     if (pattern.test(content)) return { flagged: true, reason: 'scam' };
@@ -549,8 +634,23 @@ function moderateContent(content: string): { flagged: boolean; reason?: string }
   for (const pattern of explicitPatterns) {
     if (pattern.test(content)) return { flagged: true, reason: 'explicit_content' };
   }
+  if (phonePattern.test(content)) return { flagged: true, reason: 'scam' };
 
   return { flagged: false };
+}
+
+async function isBlocked(userId: string, otherUserId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('blocked_users')
+      .select('id')
+      .eq('blocker_id', otherUserId)
+      .eq('blocked_id', userId)
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false;
+  }
 }
 
 interface SafetyState {
@@ -650,6 +750,9 @@ export const useSafetyStore = create<SafetyState>((set, get) => ({
   reportUser: async (reportedUserId: string, reason: Report['reason'], description: string) => {
     const { user } = useAuthStore.getState();
     if (!user) return;
+    if (!reportedUserId || reportedUserId === user.id) return;
+    if (!reason) return;
+    const trimmedDesc = (description || '').trim().slice(0, 1000);
 
     try {
       const { error } = await supabase
@@ -658,7 +761,7 @@ export const useSafetyStore = create<SafetyState>((set, get) => ({
           reporter_id: user.id,
           reported_user_id: reportedUserId,
           reason,
-          description,
+          description: trimmedDesc,
         });
 
       if (!error) {
@@ -720,8 +823,8 @@ interface EventState {
   userEvents: string[];
   isLoading: boolean;
   fetchEvents: () => Promise<void>;
-  rsvpEvent: (eventId: string) => void;
-  unrsvpEvent: (eventId: string) => void;
+  rsvpEvent: (eventId: string) => Promise<void>;
+  unrsvpEvent: (eventId: string) => Promise<void>;
   createEvent: (event: Omit<Event, 'id' | 'currentAttendees' | 'createdAt'>) => Promise<void>;
 }
 
@@ -745,34 +848,56 @@ export const useEventStore = create<EventState>((set, get) => ({
     }
   },
 
-  rsvpEvent: (eventId: string) => {
-    set((state) => ({
-      userEvents: [...state.userEvents, eventId],
-      events: state.events.map((e) =>
-        e.id === eventId ? { ...e, currentAttendees: (e.currentAttendees || 0) + 1 } : e
-      ),
-    }));
+  rsvpEvent: async (eventId: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      const { error } = await supabase.from('event_rsvps').insert({
+        event_id: eventId,
+        user_id: user.id,
+      });
+      if (error && error.code !== '23505') throw error;
+      set((state) => ({
+        userEvents: [...state.userEvents, eventId],
+        events: state.events.map((e) =>
+          e.id === eventId ? { ...e, currentAttendees: (e.currentAttendees || 0) + 1 } : e
+        ),
+      }));
+    } catch (error) {
+      console.error('RSVP error:', error);
+    }
   },
 
-  unrsvpEvent: (eventId: string) => {
-    set((state) => ({
-      userEvents: state.userEvents.filter((id) => id !== eventId),
-      events: state.events.map((e) =>
-        e.id === eventId ? { ...e, currentAttendees: Math.max(0, (e.currentAttendees || 1) - 1) } : e
-      ),
-    }));
+  unrsvpEvent: async (eventId: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      await supabase.from('event_rsvps')
+        .delete()
+        .eq('event_id', eventId)
+        .eq('user_id', user.id);
+      set((state) => ({
+        userEvents: state.userEvents.filter((id) => id !== eventId),
+        events: state.events.map((e) =>
+          e.id === eventId ? { ...e, currentAttendees: Math.max(0, (e.currentAttendees || 1) - 1) } : e
+        ),
+      }));
+    } catch (error) {
+      console.error('UnRSVP error:', error);
+    }
   },
 
   createEvent: async (eventData) => {
-    const newEvent: Event = {
-      id: Date.now().toString(),
-      currentAttendees: 1,
-      createdAt: new Date().toISOString(),
-      ...eventData,
-    };
-    set((state) => ({ events: [newEvent, ...state.events], userEvents: [newEvent.id, ...state.userEvents] }));
     try {
-      await supabase.from('events').insert(eventData);
+      const { data, error } = await supabase.from('events').insert(eventData).select('id').single();
+      if (error) throw error;
+      const newEvent: Event = {
+        id: data.id,
+        currentAttendees: 1,
+        createdAt: new Date().toISOString(),
+        ...eventData,
+      };
+      set((state) => ({ events: [newEvent, ...state.events], userEvents: [newEvent.id, ...state.userEvents] }));
     } catch (error) {
       console.error('Create event error:', error);
     }
@@ -814,15 +939,16 @@ export const useCommunityStore = create<CommunityState>((set) => ({
   },
 
   createCommunity: async (communityData) => {
-    const newComm: Community = {
-      id: Date.now().toString(),
-      memberCount: 1,
-      createdAt: new Date().toISOString(),
-      ...communityData,
-    };
-    set((state) => ({ communities: [newComm, ...state.communities], userCommunities: [newComm.id, ...state.userCommunities] }));
     try {
-      await supabase.from('communities').insert(communityData);
+      const { data, error } = await supabase.from('communities').insert(communityData).select('id').single();
+      if (error) throw error;
+      const newComm: Community = {
+        id: data.id,
+        memberCount: 1,
+        createdAt: new Date().toISOString(),
+        ...communityData,
+      };
+      set((state) => ({ communities: [newComm, ...state.communities], userCommunities: [newComm.id, ...state.userCommunities] }));
     } catch (error) {
       console.error('Create community error:', error);
     }

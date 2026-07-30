@@ -119,21 +119,25 @@ describe('Post-verification routing for multiple users', () => {
     });
   });
 
-  describe('verifyOtp fallback when profile fetch returns null', () => {
-    it('verifyOtp creates default profile row when fetchUserProfile returns null', async () => {
+  describe('verifySignIn fallback when profile fetch returns null', () => {
+    it('verifySignIn creates default profile row when fetchUserProfile returns null', async () => {
       const mockSession = {
         access_token: 'token123',
         refresh_token: 'refresh123',
         user: { id: 'new-user-1' },
       };
 
-      (fetch as any).mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ session: mockSession, user: mockSession.user }),
-      });
+      const mockAuth = {
+        verifyOtp: vi.fn().mockResolvedValue({
+          data: { session: mockSession },
+          error: null,
+        }),
+        setSession: vi.fn().mockResolvedValue({ error: null }),
+      };
 
       const { supabase } = await import('@/lib/supabase');
-      const fromMock = vi.fn();
+      supabase.auth = mockAuth as any;
+      supabase.from = vi.fn();
 
       const chain = {
         select: vi.fn().mockReturnThis(),
@@ -142,18 +146,19 @@ describe('Post-verification routing for multiple users', () => {
         insert: vi.fn().mockResolvedValue({ error: null }),
       };
 
-      fromMock.mockReturnValue(chain);
-      supabase.from = fromMock;
+      (supabase.from as any).mockReturnValue(chain);
 
       const { useAuthStore } = await import('@/stores');
-      const { signIn } = useAuthStore.getState();
+      const { verifySignIn } = useAuthStore.getState();
 
-      await signIn('new@test.com');
+      await verifySignIn('new@test.com', '123456');
 
-      // First call: fetchUserProfile returns null
-      expect(chain.single).toHaveBeenCalled();
+      expect(mockAuth.verifyOtp).toHaveBeenCalledWith({
+        email: 'new@test.com',
+        token: '123456',
+        type: 'email',
+      });
 
-      // Second call: insert default profile
       expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({
         id: 'new-user-1',
         email: 'new@test.com',

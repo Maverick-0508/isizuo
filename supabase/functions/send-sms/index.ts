@@ -28,10 +28,10 @@ Deno.serve(async (req) => {
     }
 
     const africastalkingApiKey = Deno.env.get("AFRICASTALKING_API_KEY");
-    const africastalkingUsername = Deno.env.get("AFRICASTALKING_USERNAME") || "sandbox";
+    const africastalkingUsername = Deno.env.get("AFRICASTALKING_USERNAME");
 
-    if (!africastalkingApiKey) {
-      console.error("[send-sms] AFRICASTALKING_API_KEY is not set");
+    if (!africastalkingApiKey || !africastalkingUsername) {
+      console.error("[send-sms] AFRICASTALKING_API_KEY or AFRICASTALKING_USERNAME not set");
       return new Response(
         JSON.stringify({ error: "SMS service not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
