@@ -34,7 +34,7 @@ export default function USSDScreen() {
     { id: '3', label: 'Safety Check-In', action: () => navigateTo('safety') },
     { id: '4', label: 'Events Near Me', action: () => navigateTo('events') },
     { id: '5', label: 'My Credits', action: () => navigateTo('credits') },
-    { id: '6', label: 'Settings', action: () => {} },
+    { id: '6', label: 'Settings', action: () => router.push('/(tabs)/profile') },
     { id: '0', label: 'Exit', action: () => router.back() },
   ];
 

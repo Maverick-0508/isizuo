@@ -54,7 +54,7 @@ export default function MatchesScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Isizuo</Text>
         </View>
-        <TouchableOpacity style={styles.notifBtn} accessibilityRole="button" accessibilityLabel={t('notifications')}>
+        <TouchableOpacity style={styles.notifBtn} onPress={() => Alert.alert('Notifications', 'You have no new notifications.')} accessibilityRole="button" accessibilityLabel={t('notifications')}>
           <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
           <View style={styles.notifDot} />
         </TouchableOpacity>
@@ -85,7 +85,7 @@ export default function MatchesScreen() {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.newMatchesScroll} contentContainerStyle={styles.newMatchesContent}>
               {displayMatches.slice(0, 4).map((m: any, i: number) => (
-                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${m.otherUser?.name || 'Match'}`}>
+                <TouchableOpacity key={m.id} style={styles.newMatchCard} activeOpacity={0.92} onPress={() => router.push(`/chat/${m.id}`)} accessibilityRole="button" accessibilityLabel={`${m.otherUser?.name || 'Match'}`}>
                   <LinearGradient
                     colors={AVATAR_GRADIENTS[i % AVATAR_GRADIENTS.length] as readonly [string, string]}
                     start={{ x: 0, y: 0 }}
@@ -107,7 +107,7 @@ export default function MatchesScreen() {
             {/* Conversations - Large Cards */}
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle} accessibilityRole="header">{t('messages')}</Text>
-              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')}>
+              <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')} onPress={() => router.push('/(tabs)/explore')}>
                 <Text style={styles.seeAll}>{t('see_all')}</Text>
               </TouchableOpacity>
             </View>
@@ -155,7 +155,7 @@ export default function MatchesScreen() {
             <Text style={styles.premiumDesc}>
               {t('upgrade_to_see_likes')}
             </Text>
-            <Button title={t('upgrade')} variant="gradient" onPress={() => {}} icon="diamond" fullWidth gradient={GRADIENTS.sunset as readonly [string, string]} />
+            <Button title={t('upgrade')} variant="gradient" onPress={() => router.push('/ussd')} icon="diamond" fullWidth gradient={GRADIENTS.sunset as readonly [string, string]} />
           </View>
         )}
 
@@ -173,7 +173,7 @@ export default function MatchesScreen() {
             <Text style={styles.premiumDesc}>
               {t('see_profile_views')}
             </Text>
-            <Button title={t('upgrade')} variant="gradient" onPress={() => {}} icon="diamond" fullWidth gradient={GRADIENTS.ocean as readonly [string, string]} />
+            <Button title={t('upgrade')} variant="gradient" onPress={() => router.push('/ussd')} icon="diamond" fullWidth gradient={GRADIENTS.ocean as readonly [string, string]} />
           </View>
         )}
       </ScrollView>

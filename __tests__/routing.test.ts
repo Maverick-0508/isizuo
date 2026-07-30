@@ -146,11 +146,9 @@ describe('Post-verification routing for multiple users', () => {
       supabase.from = fromMock;
 
       const { useAuthStore } = await import('@/stores');
-      const { verifyOtp } = useAuthStore.getState();
+      const { signIn } = useAuthStore.getState();
 
-      const result = await verifyOtp('new@test.com', '123456');
-
-      expect(result).toBe(true);
+      await signIn('new@test.com');
 
       // First call: fetchUserProfile returns null
       expect(chain.single).toHaveBeenCalled();

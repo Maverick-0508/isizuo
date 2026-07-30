@@ -62,7 +62,7 @@ export default function CommunityScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('communities')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel={t('create_event')}>
+        <TouchableOpacity style={styles.createBtn} onPress={() => Alert.alert('Create Community', 'Start a new cultural, professional, or social group for your network.')} accessibilityRole="button" accessibilityLabel={t('create_event')}>
           <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>

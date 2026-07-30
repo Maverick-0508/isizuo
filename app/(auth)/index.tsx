@@ -157,7 +157,7 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.usdBtn} accessibilityRole="button" accessibilityLabel={t('sign_in_phone')}>
+          <TouchableOpacity style={styles.usdBtn} onPress={() => router.push('/ussd')} accessibilityRole="button" accessibilityLabel={t('sign_in_phone')}>
             <Ionicons name="call-outline" size={20} color={COLORS.primary} />
             <Text style={styles.usdText}>{t('sign_in_phone')}</Text>
           </TouchableOpacity>

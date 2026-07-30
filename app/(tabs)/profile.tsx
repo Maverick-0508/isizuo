@@ -23,14 +23,14 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const menuItems = [
-    { icon: 'person-outline', label: t('edit_profile'), color: COLORS.primary, route: '/(tabs)/profile' },
+  const menuItems: { icon: string; label: string; color: string; route?: string; action?: () => void }[] = [
+    { icon: 'person-outline', label: t('edit_profile'), color: COLORS.primary, route: '/profile/edit' },
+    { icon: 'people-outline', label: t('family_values_title'), color: COLORS.accent, route: '/family' },
     { icon: 'shield-outline', label: t('safety_settings'), color: COLORS.safe, route: '/safety' },
-    { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info, route: null },
-    { icon: 'diamond-outline', label: t('subscription'), color: COLORS.premium, route: null },
-    { icon: 'language-outline', label: t('language'), color: COLORS.secondary, route: null },
-    { icon: 'help-circle-outline', label: t('help'), color: COLORS.accent, route: null },
-    { icon: 'document-text-outline', label: t('legal'), color: COLORS.textLight, route: null },
+    { icon: 'diamond-outline', label: t('subscription'), color: COLORS.premium, route: '/ussd' },
+    { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info, action: () => Alert.alert(t('notifications'), 'Push and SMS notifications enabled.') },
+    { icon: 'help-circle-outline', label: t('help'), color: COLORS.accent, action: () => Alert.alert(t('help'), 'Need support? Contact support@isizuo.com or dial *384*99# for USSD support.') },
+    { icon: 'document-text-outline', label: t('legal'), color: COLORS.textLight, action: () => Alert.alert(t('legal'), 'Isizuo Terms of Service and Privacy Policy v1.0') },
   ];
 
   return (
@@ -58,20 +58,20 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.statsRow}>
-          <View style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} onPress={() => router.push('/(tabs)')}>
             <Text style={styles.statValue}>{matchCount}</Text>
             <Text style={styles.statLabel}>{t('matches')}</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} onPress={() => router.push('/ussd')}>
             <Text style={styles.statValue}>{user?.credits ?? 0}</Text>
             <Text style={styles.statLabel}>{t('credits')}</Text>
-          </View>
+          </TouchableOpacity>
           <View style={styles.statDivider} />
-          <View style={styles.statItem}>
+          <TouchableOpacity style={styles.statItem} onPress={() => router.push('/safety')}>
             <Text style={styles.statValue}>{user?.safetyScore ?? 50}</Text>
             <Text style={styles.statLabel}>{t('safety_score')}</Text>
-          </View>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.menuSection} accessibilityRole="menu">
@@ -84,7 +84,9 @@ export default function ProfileScreen() {
               accessibilityLabel={item.label}
               onPress={() => {
                 if (item.route) {
-                  router.push(item.route);
+                  router.push(item.route as any);
+                } else if (item.action) {
+                  item.action();
                 }
               }}
             >

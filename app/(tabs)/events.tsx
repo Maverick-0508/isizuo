@@ -71,7 +71,7 @@ export default function EventsScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('events')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn} accessibilityRole="button" accessibilityLabel={t('create_event')}>
+        <TouchableOpacity style={styles.createBtn} onPress={() => Alert.alert('Create Event', 'Submit your event proposal to your local community.')} accessibilityRole="button" accessibilityLabel={t('create_event')}>
           <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
@@ -114,7 +114,7 @@ export default function EventsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle} accessibilityRole="header">{t('featured_events')}</Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')}>
+          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')} onPress={() => { setActiveCategory('all'); setSearchQuery(''); }}>
             <Text style={styles.seeAll}>{t('see_all')}</Text>
           </TouchableOpacity>
         </View>

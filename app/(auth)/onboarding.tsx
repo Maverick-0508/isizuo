@@ -98,14 +98,18 @@ export default function OnboardingScreen() {
   const handleComplete = async () => {
     try {
       let location = { latitude: 0, longitude: 0 };
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status === 'granted') {
-        const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
-        location = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status === 'granted') {
+          const pos = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced });
+          location = { latitude: pos.coords.latitude, longitude: pos.coords.longitude };
+        }
+      } catch (locErr) {
+        console.warn('Location request failed:', locErr);
       }
       await updateProfile({
         name,
-        age: parseInt(age),
+        age: parseInt(age) || 18,
         gender,
         bio,
         languages,

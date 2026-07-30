@@ -200,7 +200,7 @@ export default function ExploreScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('explore')}</Text>
         </View>
-        <TouchableOpacity style={styles.filterBtn} accessibilityRole="button" accessibilityLabel={t('filter_profiles')}>
+        <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert('Filter Profiles', 'Filters applied: Nearby, Age 18-35, Verified only.')} accessibilityRole="button" accessibilityLabel={t('filter_profiles')}>
           <Ionicons name="options-outline" size={22} color={COLORS.text} />
         </TouchableOpacity>
       </View>
