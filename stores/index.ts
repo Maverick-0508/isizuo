@@ -563,6 +563,7 @@ interface EventState {
   isLoading: boolean;
   fetchEvents: () => Promise<void>;
   rsvpEvent: (eventId: string) => void;
+  unrsvpEvent: (eventId: string) => void;
   createEvent: (event: Omit<Event, 'id' | 'currentAttendees' | 'createdAt'>) => Promise<void>;
 }
 
@@ -589,6 +590,18 @@ export const useEventStore = create<EventState>((set, get) => ({
   rsvpEvent: (eventId: string) => {
     set((state) => ({
       userEvents: [...state.userEvents, eventId],
+      events: state.events.map((e) =>
+        e.id === eventId ? { ...e, currentAttendees: (e.currentAttendees || 0) + 1 } : e
+      ),
+    }));
+  },
+
+  unrsvpEvent: (eventId: string) => {
+    set((state) => ({
+      userEvents: state.userEvents.filter((id) => id !== eventId),
+      events: state.events.map((e) =>
+        e.id === eventId ? { ...e, currentAttendees: Math.max(0, (e.currentAttendees || 1) - 1) } : e
+      ),
     }));
   },
 

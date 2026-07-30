@@ -20,7 +20,7 @@ const EVENT_CATEGORIES = [
 
 export default function EventsScreen() {
   const { t } = useTranslation();
-  const { events: storeEvents, isLoading, fetchEvents, rsvpEvent, userEvents, createEvent } = useEventStore();
+  const { events: storeEvents, isLoading, fetchEvents, rsvpEvent, unrsvpEvent, userEvents, createEvent } = useEventStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -32,6 +32,17 @@ export default function EventsScreen() {
   const [newLocation, setNewLocation] = useState('');
   const [newCategory, setNewCategory] = useState<'social' | 'professional' | 'cultural' | 'sports'>('social');
   const [newDescription, setNewDescription] = useState('');
+
+  // RSVP Confirmation State (Luma-style)
+  const [showRSVPModal, setShowRSVPModal] = useState(false);
+  const [rsvpTargetEvent, setRsvpTargetEvent] = useState<any>(null);
+  const [rsvpStep, setRsvpStep] = useState<'form' | 'ticket'>('form');
+  const [rsvpName, setRsvpName] = useState('');
+  const [rsvpEmail, setRsvpEmail] = useState('');
+  const [rsvpPhone, setRsvpPhone] = useState('');
+  const [rsvpPlusOne, setRsvpPlusOne] = useState(false);
+  const [rsvpNote, setRsvpNote] = useState('');
+  const [rsvpQuestion, setRsvpQuestion] = useState('');
 
   useEffect(() => {
     fetchEvents();
@@ -87,8 +98,43 @@ export default function EventsScreen() {
     return result;
   }, [enrichedEvents, activeCategory, searchQuery]);
 
-  const handleRSVP = (eventId: string) => {
-    rsvpEvent(eventId);
+  const handleRSVP = (event: any) => {
+    if (event.rsvp) {
+      unrsvpEvent(event.id);
+      return;
+    }
+    setRsvpTargetEvent(event);
+    setRsvpName('');
+    setRsvpEmail('');
+    setRsvpPhone('');
+    setRsvpPlusOne(false);
+    setRsvpNote('');
+    setRsvpQuestion('');
+    setRsvpStep('form');
+    setShowRSVPModal(true);
+  };
+
+  const handleConfirmRSVP = () => {
+    if (!rsvpName.trim()) {
+      Alert.alert('Required', 'Please enter your name');
+      return;
+    }
+    if (!rsvpEmail.trim()) {
+      Alert.alert('Required', 'Please enter your email');
+      return;
+    }
+    if (!rsvpPhone.trim()) {
+      Alert.alert('Required', 'Please enter your phone number');
+      return;
+    }
+    setRsvpStep('ticket');
+  };
+
+  const handleFinalizeRSVP = () => {
+    rsvpEvent(rsvpTargetEvent.id);
+    setShowRSVPModal(false);
+    setRsvpTargetEvent(null);
+    setRsvpStep('form');
   };
 
   return (
@@ -157,11 +203,17 @@ export default function EventsScreen() {
         )}
 
         {filteredEvents.map((event) => (
-          <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${event.title}, ${event.date}, ${event.time}, ${event.location}, ${event.attendees} ${t('going')}`}>
+          <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${event.title}, ${event.date}, ${event.time}, ${event.location}, ${event.currentAttendees} ${t('going')}`}>
             <View style={[styles.eventCover, { backgroundColor: event.color + '12' }]}>
               <View style={[styles.eventIconCircle, { backgroundColor: event.color + '20' }]}>
                 <Ionicons name={EVENT_CATEGORIES.find(c => c.key === event.category)?.icon as any || 'calendar'} size={26} color={event.color} />
               </View>
+              {event.rsvp && (
+                <View style={styles.goingBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+                  <Text style={styles.goingBadgeText}>Going</Text>
+                </View>
+              )}
             </View>
             <View style={styles.eventInfo}>
               <View style={styles.eventDateRow}>
@@ -177,7 +229,7 @@ export default function EventsScreen() {
                 </View>
                 <View style={styles.eventMetaItem}>
                   <Ionicons name="people-outline" size={13} color={COLORS.textLight} />
-                  <Text style={styles.eventMetaText}>{event.attendees} {t('going')}</Text>
+                  <Text style={styles.eventMetaText}>{event.currentAttendees ?? event.attendees ?? 0} {t('going')}</Text>
                 </View>
               </View>
               <View style={styles.eventActions}>
@@ -191,7 +243,7 @@ export default function EventsScreen() {
                   variant={event.rsvp ? 'outline' : 'primary'}
                   size="sm"
                   icon={event.rsvp ? 'close' : 'checkmark'}
-                  onPress={() => handleRSVP(event.id)}
+                  onPress={() => handleRSVP(event)}
                 />
               </View>
             </View>
@@ -212,6 +264,204 @@ export default function EventsScreen() {
           <Text style={styles.emptyDesc}>{t('rsvp_to_events')}</Text>
         </View>
       </ScrollView>
+
+      {/* LUMA-STYLE RSVP MODAL */}
+      <Modal visible={showRSVPModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.rsvpModalCard}>
+
+            {rsvpStep === 'form' && rsvpTargetEvent && (
+              <>
+                {/* Event Header */}
+                <LinearGradient
+                  colors={[rsvpTargetEvent.color || GRADIENTS.primary[0], GRADIENTS.primary[1]]}
+                  style={styles.rsvpEventCover}
+                >
+                  <TouchableOpacity style={styles.rsvpCloseBtn} onPress={() => setShowRSVPModal(false)}>
+                    <Ionicons name="close" size={22} color="#FFFFFF" />
+                  </TouchableOpacity>
+                  <View style={styles.rsvpEventCoverContent}>
+                    <View style={styles.rsvpCategoryBadge}>
+                      <Ionicons name={EVENT_CATEGORIES.find(c => c.key === rsvpTargetEvent.category)?.icon as any || 'calendar'} size={12} color="#FFFFFF" />
+                      <Text style={styles.rsvpCategoryBadgeText}>{rsvpTargetEvent.category}</Text>
+                    </View>
+                    <Text style={styles.rsvpCoverTitle}>{rsvpTargetEvent.title}</Text>
+                    <View style={styles.rsvpCoverMeta}>
+                      <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.85)" />
+                      <Text style={styles.rsvpCoverMetaText}>{rsvpTargetEvent.date} \u2022 {rsvpTargetEvent.time}</Text>
+                    </View>
+                    <View style={styles.rsvpCoverMeta}>
+                      <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.85)" />
+                      <Text style={styles.rsvpCoverMetaText}>{rsvpTargetEvent.location}</Text>
+                    </View>
+                    <View style={styles.rsvpCoverMeta}>
+                      <Ionicons name="people-outline" size={13} color="rgba(255,255,255,0.85)" />
+                      <Text style={styles.rsvpCoverMetaText}>{rsvpTargetEvent.attendees || 0} attending</Text>
+                    </View>
+                  </View>
+                </LinearGradient>
+
+                {/* Registration Form */}
+                <ScrollView showsVerticalScrollIndicator={false} style={styles.rsvpFormBody}>
+                  <Text style={styles.rsvpFormSectionTitle}>Enter your details to reserve your spot</Text>
+
+                  <Text style={styles.rsvpFormLabel}>Full Name *</Text>
+                  <TextInput
+                    style={styles.rsvpInput}
+                    value={rsvpName}
+                    onChangeText={setRsvpName}
+                    placeholder="Your name"
+                    placeholderTextColor={COLORS.textLight}
+                  />
+
+                  <Text style={styles.rsvpFormLabel}>Email Address *</Text>
+                  <TextInput
+                    style={styles.rsvpInput}
+                    value={rsvpEmail}
+                    onChangeText={setRsvpEmail}
+                    placeholder="your@email.com"
+                    placeholderTextColor={COLORS.textLight}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                  />
+
+                  <Text style={styles.rsvpFormLabel}>Phone Number *</Text>
+                  <TextInput
+                    style={styles.rsvpInput}
+                    value={rsvpPhone}
+                    onChangeText={setRsvpPhone}
+                    placeholder="+254 7XX XXX XXX"
+                    placeholderTextColor={COLORS.textLight}
+                    keyboardType="phone-pad"
+                  />
+
+                  <View style={styles.rsvpDivider} />
+
+                  <Text style={styles.rsvpFormLabel}>How did you hear about this event?</Text>
+                  <TextInput
+                    style={styles.rsvpInput}
+                    value={rsvpQuestion}
+                    onChangeText={setRsvpQuestion}
+                    placeholder="e.g. Social media, friend, community"
+                    placeholderTextColor={COLORS.textLight}
+                  />
+
+                  <TouchableOpacity
+                    style={styles.rsvpToggleRow}
+                    onPress={() => setRsvpPlusOne(!rsvpPlusOne)}
+                  >
+                    <View style={[styles.rsvpCheckbox, rsvpPlusOne && styles.rsvpCheckboxActive]}>
+                      {rsvpPlusOne && <Ionicons name="checkmark" size={16} color={COLORS.textInverse} />}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.rsvpToggleText}>Bringing a guest</Text>
+                      <Text style={styles.rsvpToggleSub}>They'll need to register separately</Text>
+                    </View>
+                  </TouchableOpacity>
+
+                  <Text style={styles.rsvpFormLabel}>Anything else? (optional)</Text>
+                  <TextInput
+                    style={[styles.rsvpInput, styles.rsvpTextArea]}
+                    value={rsvpNote}
+                    onChangeText={setRsvpNote}
+                    placeholder="Dietary restrictions, questions..."
+                    placeholderTextColor={COLORS.textLight}
+                    multiline
+                    numberOfLines={2}
+                  />
+                </ScrollView>
+
+                <View style={styles.rsvpFormFooter}>
+                  <Text style={styles.rsvpFooterNote}>
+                    By registering, you agree to the event terms and Isizuo's community guidelines.
+                  </Text>
+                  <Button title="Reserve my spot" variant="gradient" size="lg" fullWidth icon="checkmark-circle" onPress={handleConfirmRSVP} />
+                </View>
+              </>
+            )}
+
+            {rsvpStep === 'ticket' && rsvpTargetEvent && (
+              <>
+                {/* Ticket Confirmation */}
+                <ScrollView showsVerticalScrollIndicator={false}>
+                  <View style={styles.ticketContainer}>
+                    <TouchableOpacity style={styles.rsvpCloseBtn} onPress={() => { setShowRSVPModal(false); setRsvpStep('form'); }}>
+                      <Ionicons name="close" size={22} color={COLORS.text} />
+                    </TouchableOpacity>
+
+                    <View style={styles.ticketSuccessIcon}>
+                      <LinearGradient colors={GRADIENTS.primary} style={styles.ticketSuccessIconInner}>
+                        <Ionicons name="checkmark" size={32} color="#FFFFFF" />
+                      </LinearGradient>
+                    </View>
+
+                    <Text style={styles.ticketTitle}>You're in!</Text>
+                    <Text style={styles.ticketSubtitle}>
+                      Your spot is reserved for {rsvpTargetEvent.title}
+                    </Text>
+
+                    <View style={styles.ticketCard}>
+                      <LinearGradient colors={[COLORS.primary, COLORS.secondary]} style={styles.ticketCardGradient}>
+                        <View style={styles.ticketCardHeader}>
+                          <Text style={styles.ticketCardTitle}>{rsvpTargetEvent.title}</Text>
+                          <Text style={styles.ticketCardCategory}>{rsvpTargetEvent.category}</Text>
+                        </View>
+                        <View style={styles.ticketCardBody}>
+                          <View style={styles.ticketCardRow}>
+                            <Ionicons name="calendar" size={16} color="rgba(255,255,255,0.8)" />
+                            <Text style={styles.ticketCardRowText}>{rsvpTargetEvent.date} at {rsvpTargetEvent.time}</Text>
+                          </View>
+                          <View style={styles.ticketCardRow}>
+                            <Ionicons name="location" size={16} color="rgba(255,255,255,0.8)" />
+                            <Text style={styles.ticketCardRowText}>{rsvpTargetEvent.location}</Text>
+                          </View>
+                          <View style={styles.ticketCardRow}>
+                            <Ionicons name="person" size={16} color="rgba(255,255,255,0.8)" />
+                            <Text style={styles.ticketCardRowText}>{rsvpName}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.ticketDivider}>
+                          <View style={styles.ticketDividerDotLeft} />
+                          <View style={styles.ticketDividerLine} />
+                          <View style={styles.ticketDividerDotRight} />
+                        </View>
+                        <View style={styles.ticketCardFooter}>
+                          <View style={styles.ticketQRPlaceholder}>
+                            <Ionicons name="qr-code" size={32} color="rgba(255,255,255,0.4)" />
+                          </View>
+                          <Text style={styles.ticketQRText}>Show this at check-in</Text>
+                        </View>
+                      </LinearGradient>
+                    </View>
+
+                    <View style={styles.ticketActions}>
+                      <TouchableOpacity style={styles.ticketActionBtn}>
+                        <Ionicons name="calendar" size={18} color={COLORS.primary} />
+                        <Text style={styles.ticketActionText}>Add to Calendar</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.ticketActionBtn}>
+                        <Ionicons name="share-social" size={18} color={COLORS.primary} />
+                        <Text style={styles.ticketActionText}>Share</Text>
+                      </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.ticketUpdateNote}>
+                      Event updates will be sent to {rsvpEmail}
+                    </Text>
+                  </View>
+                </ScrollView>
+
+                <View style={styles.rsvpFormFooter}>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Done" variant="gradient" size="lg" fullWidth onPress={handleFinalizeRSVP} />
+                  </View>
+                </View>
+              </>
+            )}
+
+          </View>
+        </View>
+      </Modal>
 
       {/* CREATE EVENT MODAL */}
       <Modal visible={showCreateModal} transparent animationType="slide">
@@ -355,6 +605,13 @@ const styles = StyleSheet.create({
   },
   eventCover: { height: 90, alignItems: 'center', justifyContent: 'center' },
   eventIconCircle: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center' },
+  goingBadge: {
+    position: 'absolute', top: 8, right: 8,
+    flexDirection: 'row', alignItems: 'center', gap: 3,
+    backgroundColor: COLORS.primary, paddingHorizontal: 8, paddingVertical: 3,
+    borderRadius: BORDER_RADIUS.full,
+  },
+  goingBadgeText: { fontSize: 10, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: 0.3 },
   eventInfo: { padding: SPACING.lg },
   eventDateRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 },
   eventDate: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.primary },
@@ -405,4 +662,86 @@ const styles = StyleSheet.create({
   createCategoryText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
   createCategoryTextActive: { color: COLORS.textInverse },
   createModalFooter: { padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
+  rsvpModalCard: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden',
+    maxHeight: height * 0.92, ...SHADOWS.lg,
+  },
+  rsvpEventCover: {
+    paddingTop: 48, paddingBottom: SPACING.lg, paddingHorizontal: SPACING.lg,
+    position: 'relative',
+  },
+  rsvpCloseBtn: {
+    position: 'absolute', top: 12, right: 12, zIndex: 10,
+    width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.25)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rsvpEventCoverContent: { gap: 6 },
+  rsvpCategoryBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 10, paddingVertical: 4,
+    borderRadius: BORDER_RADIUS.full,
+  },
+  rsvpCategoryBadgeText: { fontSize: 11, fontFamily: FONTS.semiBold, color: '#FFFFFF', textTransform: 'capitalize' },
+  rsvpCoverTitle: { fontSize: FONT_SIZES.xxl, fontFamily: FONTS.extraBold, color: '#FFFFFF', letterSpacing: -0.8, marginTop: 4 },
+  rsvpCoverMeta: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  rsvpCoverMetaText: { fontSize: 13, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.85)' },
+  rsvpFormBody: { padding: SPACING.lg, maxHeight: 340 },
+  rsvpFormSectionTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: SPACING.md },
+  rsvpFormLabel: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text, marginBottom: 6, marginTop: SPACING.md },
+  rsvpInput: {
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: FONT_SIZES.md, color: COLORS.text,
+    backgroundColor: COLORS.background,
+  },
+  rsvpTextArea: { height: 65, textAlignVertical: 'top' },
+  rsvpDivider: { height: 1, backgroundColor: COLORS.borderLight, marginVertical: SPACING.sm },
+  rsvpToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: SPACING.md },
+  rsvpCheckbox: {
+    width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  rsvpCheckboxActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  rsvpToggleText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text },
+  rsvpToggleSub: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 1 },
+  rsvpFormFooter: {
+    padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.borderLight, gap: SPACING.md,
+  },
+  rsvpFooterNote: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', lineHeight: 18 },
+  ticketContainer: { padding: SPACING.lg, alignItems: 'center' },
+  ticketSuccessIcon: { marginTop: SPACING.lg, marginBottom: SPACING.md },
+  ticketSuccessIconInner: { width: 64, height: 64, borderRadius: 32, alignItems: 'center', justifyContent: 'center' },
+  ticketTitle: { fontSize: FONT_SIZES.title, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -1 },
+  ticketSubtitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textSecondary, textAlign: 'center', marginBottom: SPACING.lg },
+  ticketCard: { width: '100%', borderRadius: BORDER_RADIUS.xl, overflow: 'hidden', ...SHADOWS.lg, marginBottom: SPACING.lg },
+  ticketCardGradient: { padding: 0 },
+  ticketCardHeader: { padding: SPACING.lg, paddingBottom: SPACING.md },
+  ticketCardTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: '#FFFFFF', letterSpacing: -0.3 },
+  ticketCardCategory: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: 'rgba(255,255,255,0.7)', textTransform: 'capitalize', marginTop: 2 },
+  ticketCardBody: { paddingHorizontal: SPACING.lg, gap: 8, paddingBottom: SPACING.lg },
+  ticketCardRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  ticketCardRowText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.9)' },
+  ticketDivider: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: SPACING.lg,
+  },
+  ticketDividerDotLeft: {
+    width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.surface, marginRight: -6, zIndex: 1,
+  },
+  ticketDividerLine: { flex: 1, height: 2, borderStyle: 'dashed', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  ticketDividerDotRight: {
+    width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.surface, marginLeft: -6, zIndex: 1,
+  },
+  ticketCardFooter: { padding: SPACING.lg, alignItems: 'center', gap: 8 },
+  ticketQRPlaceholder: {
+    width: 64, height: 64, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.1)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  ticketQRText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.6)' },
+  ticketActions: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.md },
+  ticketActionBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 12, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  ticketActionText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.primary },
+  ticketUpdateNote: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center' },
 });

@@ -161,6 +161,62 @@ describe('USSD Keypad Logic', () => {
   });
 });
 
+describe('RSVP Confirmation Flow', () => {
+  it('requires name and phone to confirm', () => {
+    const errors: string[] = [];
+    const confirm = (name: string, phone: string) => {
+      if (!name.trim()) errors.push('Please enter your name');
+      if (!phone.trim()) errors.push('Please enter your phone number');
+      return errors.length === 0;
+    };
+
+    expect(confirm('', '')).toBe(false);
+    expect(errors).toHaveLength(2);
+    errors.length = 0;
+
+    expect(confirm('Alex', '')).toBe(false);
+    expect(errors).toEqual(['Please enter your phone number']);
+    errors.length = 0;
+
+    expect(confirm('Alex', '+254700000000')).toBe(true);
+    expect(errors).toHaveLength(0);
+  });
+
+  it('shows event details in confirmation', () => {
+    const event = { title: 'Lagos Tech Meetup', date: 'Sat, Aug 9', time: '6:00 PM', location: 'The Hub, Lagos' };
+    expect(event.title).toBe('Lagos Tech Meetup');
+    expect(event.date).toBe('Sat, Aug 9');
+    expect(event.time).toBe('6:00 PM');
+    expect(event.location).toBe('The Hub, Lagos');
+  });
+
+  it('toggles plus one', () => {
+    let plusOne = false;
+    plusOne = !plusOne;
+    expect(plusOne).toBe(true);
+    plusOne = !plusOne;
+    expect(plusOne).toBe(false);
+  });
+
+  it('stores optional note for organizer', () => {
+    let note = '';
+    note = 'I have a nut allergy';
+    expect(note).toBe('I have a nut allergy');
+  });
+
+  it('tracks which events user has RSVPed to', () => {
+    const userEvents: string[] = [];
+    const rsvpEvent = (id: string) => {
+      userEvents.push(id);
+    };
+    rsvpEvent('event-1');
+    rsvpEvent('event-2');
+    expect(userEvents).toEqual(['event-1', 'event-2']);
+    expect(userEvents.includes('event-1')).toBe(true);
+    expect(userEvents.includes('event-3')).toBe(false);
+  });
+});
+
 describe('Create Event Form Validation', () => {
   const validateEvent = (title: string, location: string) => {
     if (!title.trim()) return 'Please fill in event title and location';
