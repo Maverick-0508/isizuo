@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, Modal, Alert } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 import { useCommunityStore } from '@/stores';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const SAMPLE_COMMUNITIES = [
   { id: '1', name: 'Yoruba Connect', members: 2340, category: 'Cultural', color: '#5B4BD5', description: 'A space for Yoruba singles to connect, share culture, and find love.', isVerified: true, isJoined: true },
@@ -20,9 +21,37 @@ const SAMPLE_COMMUNITIES = [
 
 export default function CommunityScreen() {
   const { t } = useTranslation();
-  const { communities: storeCommunities, isLoading, fetchCommunities, joinCommunity, userCommunities } = useCommunityStore();
+  const { communities: storeCommunities, isLoading, fetchCommunities, joinCommunity, userCommunities, createCommunity } = useCommunityStore();
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Create Community Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newCommName, setNewCommName] = useState('');
+  const [newCommDesc, setNewCommDesc] = useState('');
+  const [newCommCategory, setNewCommCategory] = useState<'cultural' | 'professional' | 'hobby' | 'cause'>('cultural');
+  const [newCommPublic, setNewCommPublic] = useState(true);
+
+  const handleCreateCommunity = async () => {
+    if (!newCommName.trim()) {
+      Alert.alert('Error', 'Please enter a community name');
+      return;
+    }
+    await createCommunity({
+      name: newCommName.trim(),
+      description: newCommDesc.trim() || 'A new community on Isizuo',
+      category: newCommCategory,
+      members: [],
+      admins: [],
+      isPublic: newCommPublic,
+      languages: ['en'],
+      rules: [],
+    });
+    setShowCreateModal(false);
+    setNewCommName('');
+    setNewCommDesc('');
+    Alert.alert('Community Created', 'Your community has been created!');
+  };
 
   useEffect(() => {
     fetchCommunities();
@@ -62,7 +91,7 @@ export default function CommunityScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('communities')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn} onPress={() => Alert.alert('Create Community', 'Start a new cultural, professional, or social group for your network.')} accessibilityRole="button" accessibilityLabel={t('create_event')}>
+        <TouchableOpacity style={styles.createBtn} onPress={() => setShowCreateModal(true)} accessibilityRole="button" accessibilityLabel={t('create_event')}>
           <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
@@ -151,6 +180,91 @@ export default function CommunityScreen() {
           </TouchableOpacity>
         ))}
       </ScrollView>
+
+      {/* CREATE COMMUNITY MODAL */}
+      <Modal visible={showCreateModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.createModalCard}>
+            <LinearGradient colors={GRADIENTS.cool} style={styles.createModalHeader}>
+              <Text style={styles.createModalTitle}>Create Community</Text>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.createModalBody}>
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Community Name</Text>
+                <TextInput
+                  style={styles.createInput}
+                  value={newCommName}
+                  onChangeText={setNewCommName}
+                  placeholder="e.g. Yoruba Connect"
+                  placeholderTextColor={COLORS.textLight}
+                />
+              </View>
+
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Category</Text>
+                <View style={styles.createCategoryRow}>
+                  {([
+                    { key: 'cultural', icon: 'globe', label: 'Cultural' },
+                    { key: 'professional', icon: 'briefcase', label: 'Professional' },
+                    { key: 'hobby', icon: 'heart', label: 'Hobby' },
+                    { key: 'cause', icon: 'megaphone', label: 'Cause' },
+                  ] as const).map((cat) => (
+                    <TouchableOpacity
+                      key={cat.key}
+                      style={[styles.createCategoryBtn, newCommCategory === cat.key && styles.createCategoryBtnActive]}
+                      onPress={() => setNewCommCategory(cat.key)}
+                    >
+                      <Ionicons name={cat.icon as any} size={16} color={newCommCategory === cat.key ? COLORS.textInverse : COLORS.textMuted} />
+                      <Text style={[styles.createCategoryText, newCommCategory === cat.key && styles.createCategoryTextActive]}>{cat.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Description</Text>
+                <TextInput
+                  style={[styles.createInput, styles.createTextArea]}
+                  value={newCommDesc}
+                  onChangeText={setNewCommDesc}
+                  placeholder="What is this community about?"
+                  placeholderTextColor={COLORS.textLight}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Visibility</Text>
+                <View style={styles.createVisibilityRow}>
+                  <TouchableOpacity
+                    style={[styles.createVisibilityBtn, newCommPublic && styles.createVisibilityBtnActive]}
+                    onPress={() => setNewCommPublic(true)}
+                  >
+                    <Ionicons name="globe" size={18} color={newCommPublic ? COLORS.textInverse : COLORS.textMuted} />
+                    <Text style={[styles.createVisibilityText, newCommPublic && styles.createVisibilityTextActive]}>Public</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.createVisibilityBtn, !newCommPublic && styles.createVisibilityBtnActive]}
+                    onPress={() => setNewCommPublic(false)}
+                  >
+                    <Ionicons name="lock-closed" size={18} color={!newCommPublic ? COLORS.textInverse : COLORS.textMuted} />
+                    <Text style={[styles.createVisibilityText, !newCommPublic && styles.createVisibilityTextActive]}>Private</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.createModalFooter}>
+              <Button title="Create Community" variant="gradient" size="lg" fullWidth onPress={handleCreateCommunity} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -208,4 +322,42 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text },
   emptyDesc: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 4 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', padding: SPACING.lg },
+  createModalCard: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden',
+    maxHeight: height * 0.85, ...SHADOWS.lg,
+  },
+  createModalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  createModalTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  createModalBody: { padding: SPACING.lg },
+  createField: { marginBottom: SPACING.md },
+  createLabel: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text, marginBottom: 6 },
+  createInput: {
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: FONT_SIZES.md, color: COLORS.text,
+    backgroundColor: COLORS.background,
+  },
+  createTextArea: { height: 80, textAlignVertical: 'top' },
+  createCategoryRow: { flexDirection: 'row', gap: SPACING.sm },
+  createCategoryBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    paddingVertical: 10, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  createCategoryBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  createCategoryText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
+  createCategoryTextActive: { color: COLORS.textInverse },
+  createVisibilityRow: { flexDirection: 'row', gap: SPACING.sm },
+  createVisibilityBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 12, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  createVisibilityBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  createVisibilityText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
+  createVisibilityTextActive: { color: COLORS.textInverse },
+  createModalFooter: { padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
 });

@@ -1,7 +1,8 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, PanResponder, ActivityIndicator } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Animated, PanResponder, ActivityIndicator, Modal, TextInput, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Badge, Avatar, Button, ActiveNowBadge, InterestPill, EmptyState } from '@/components/ui';
@@ -49,6 +50,71 @@ export default function ExploreScreen() {
   const [activeProfileTab, setActiveProfileTab] = useState<'about' | 'interests' | 'values'>('about');
   const [swipedDirection, setSwipedDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+
+  // New Modals State
+  const [showMatchModal, setShowMatchModal] = useState(false);
+  const [matchedProfile, setMatchedProfile] = useState<any>(null);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [minAge, setMinAge] = useState('18');
+  const [maxAge, setMaxAge] = useState('35');
+  const [maxDistance, setMaxDistance] = useState('50');
+  const [verifiedOnlyFilter, setVerifiedOnlyFilter] = useState(false);
+
+  // Enhanced Filter State
+  const [filterGender, setFilterGender] = useState<string>('all');
+  const [filterInterests, setFilterInterests] = useState<string[]>([]);
+  const [filterCommunity, setFilterCommunity] = useState<string>('');
+
+  // Match Modal Animation
+  const matchScale = useRef(new Animated.Value(0)).current;
+  const matchHeartPulse = useRef(new Animated.Value(1)).current;
+  const matchParticles = useRef(new Animated.Value(0)).current;
+  const matchFadeIn = useRef(new Animated.Value(0)).current;
+
+  const particles = useMemo(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      delay: Math.random() * 1500,
+      size: 8 + Math.random() * 16,
+      color: ['#FF4D6D', '#E8A820', '#5B4BD5', '#00B894', '#FF6B6B', '#A29BFE', '#FD79A8', '#74B9FF'][i % 8],
+      icon: ['heart', 'star', 'sparkles', 'diamond'][i % 4],
+    }));
+  }, []);
+
+  useEffect(() => {
+    if (showMatchModal) {
+      matchScale.setValue(0);
+      matchHeartPulse.setValue(1);
+      matchParticles.setValue(0);
+      matchFadeIn.setValue(0);
+
+      Animated.sequence([
+        Animated.spring(matchScale, {
+          toValue: 1, friction: 5, tension: 40, useNativeDriver: true,
+        }),
+        Animated.parallel([
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(matchHeartPulse, {
+                toValue: 1.2, duration: 600, useNativeDriver: true,
+              }),
+              Animated.timing(matchHeartPulse, {
+                toValue: 1, duration: 600, useNativeDriver: true,
+              }),
+            ]),
+            { iterations: -1 }
+          ),
+          Animated.timing(matchParticles, {
+            toValue: 1, duration: 3000, useNativeDriver: true,
+          }),
+          Animated.timing(matchFadeIn, {
+            toValue: 1, duration: 800, delay: 300, useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+    }
+  }, [showMatchModal]);
 
   const position = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const scaleNext = useRef(new Animated.Value(0.95)).current;
@@ -158,12 +224,20 @@ export default function ExploreScreen() {
   }, [animateSwipe, profiles, currentIndex, passUser]);
 
   const handleLike = useCallback(() => {
-    if (profiles[currentIndex]) likeUser(profiles[currentIndex].id);
+    if (profiles[currentIndex]) {
+      likeUser(profiles[currentIndex].id);
+      setMatchedProfile(profiles[currentIndex]);
+      setShowMatchModal(true);
+    }
     animateSwipe('right');
   }, [animateSwipe, profiles, currentIndex, likeUser]);
 
   const handleSuperLike = useCallback(() => {
-    if (profiles[currentIndex]) superLikeUser(profiles[currentIndex].id);
+    if (profiles[currentIndex]) {
+      superLikeUser(profiles[currentIndex].id);
+      setMatchedProfile(profiles[currentIndex]);
+      setShowMatchModal(true);
+    }
     animateSwipe('right');
   }, [animateSwipe, profiles, currentIndex, superLikeUser]);
 
@@ -200,7 +274,7 @@ export default function ExploreScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('explore')}</Text>
         </View>
-        <TouchableOpacity style={styles.filterBtn} onPress={() => Alert.alert('Filter Profiles', 'Filters applied: Nearby, Age 18-35, Verified only.')} accessibilityRole="button" accessibilityLabel={t('filter_profiles')}>
+        <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilterModal(true)} accessibilityRole="button" accessibilityLabel={t('filter_profiles')}>
           <Ionicons name="options-outline" size={22} color={COLORS.text} />
         </TouchableOpacity>
       </View>
@@ -401,6 +475,276 @@ export default function ExploreScreen() {
         </>
         )}
       </View>
+
+      {/* ENHANCED MATCH CELEBRATION MODAL */}
+      <Modal visible={showMatchModal} transparent animationType="fade">
+        <View style={styles.modalOverlayDark}>
+          <Animated.View style={[styles.matchParticlesContainer, { opacity: matchParticles }]}>
+            {particles.map((p) => (
+              <Animated.View
+                key={p.id}
+                style={[
+                  styles.matchParticle,
+                  {
+                    left: `${p.left}%`,
+                    top: -20,
+                    opacity: matchParticles.interpolate({
+                      inputRange: [0, 0.3, 1],
+                      outputRange: [0, 1, 0],
+                    }),
+                    transform: [{
+                      translateY: matchParticles.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, 600 + Math.random() * 200],
+                      }),
+                    }, {
+                      translateX: matchParticles.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [0, (Math.random() - 0.5) * 100],
+                      }),
+                    }, {
+                      rotate: matchParticles.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', `${Math.random() * 720}deg`],
+                      }),
+                    }],
+                  },
+                ]}
+              >
+                <Ionicons name={p.icon as any} size={p.size} color={p.color} />
+              </Animated.View>
+            ))}
+          </Animated.View>
+
+          <Animated.View style={{ transform: [{ scale: matchScale }] }}>
+            <LinearGradient
+              colors={['#1E0F33', '#3B154C', '#120824']}
+              style={styles.matchModalContainer}
+            >
+              <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setShowMatchModal(false)}>
+                <Ionicons name="close" size={26} color="#FFFFFF" />
+              </TouchableOpacity>
+
+              <Animated.View style={[styles.matchHeaderBox, { opacity: matchFadeIn }]}>
+                <View style={styles.matchSparkleRow}>
+                  <Ionicons name="sparkles" size={20} color={COLORS.accent} />
+                  <Ionicons name="heart" size={36} color="#FF4D6D" />
+                  <Ionicons name="sparkles" size={20} color={COLORS.accent} />
+                </View>
+                <Animated.View style={{ transform: [{ scale: matchHeartPulse }] }}>
+                  <Text style={styles.matchTitleText}>It's a Match!</Text>
+                </Animated.View>
+                <Text style={styles.matchSubtitleText}>
+                  You and {matchedProfile?.name || 'your match'} like each other!
+                </Text>
+              </Animated.View>
+
+              <Animated.View style={[styles.matchAvatarsRow, { opacity: matchFadeIn }]}>
+                <View style={styles.matchAvatarOuter}>
+                  <LinearGradient colors={GRADIENTS.primary} style={styles.matchAvatarCircle}>
+                    <Ionicons name="person" size={32} color="#FFFFFF" />
+                  </LinearGradient>
+                  <Text style={styles.matchAvatarLabel}>You</Text>
+                </View>
+                <Animated.View style={{ transform: [{ scale: matchHeartPulse }] }}>
+                  <View style={styles.matchHeartIcon}>
+                    <Ionicons name="heart" size={32} color="#FF4D6D" />
+                  </View>
+                </Animated.View>
+                <View style={styles.matchAvatarOuter}>
+                  <LinearGradient colors={GRADIENTS.cool} style={styles.matchAvatarCircle}>
+                    <Text style={styles.matchAvatarText}>
+                      {(matchedProfile?.name || 'M').charAt(0)}
+                    </Text>
+                  </LinearGradient>
+                  <Text style={styles.matchAvatarLabel}>{matchedProfile?.name || 'Match'}</Text>
+                </View>
+              </Animated.View>
+
+              <Animated.View style={[styles.matchCompatBadge, { opacity: matchFadeIn }]}>
+                <Ionicons name="flash" size={16} color={COLORS.accent} />
+                <Text style={styles.matchCompatBadgeText}>
+                  {matchedProfile?.compatibilityScore || matchedProfile?.compatibility || 92}% Compatibility
+                </Text>
+              </Animated.View>
+
+              <Animated.View style={[styles.matchCompatDetails, { opacity: matchFadeIn }]}>
+                <View style={styles.matchCompatDetailItem}>
+                  <Ionicons name="people" size={16} color="#A29BFE" />
+                  <Text style={styles.matchCompatDetailText}>Cultural Match</Text>
+                </View>
+                <View style={styles.matchCompatDetailItem}>
+                  <Ionicons name="heart-circle" size={16} color="#FF4D6D" />
+                  <Text style={styles.matchCompatDetailText}>Interests Aligned</Text>
+                </View>
+                <View style={styles.matchCompatDetailItem}>
+                  <Ionicons name="shield-checkmark" size={16} color="#00B894" />
+                  <Text style={styles.matchCompatDetailText}>Values Match</Text>
+                </View>
+              </Animated.View>
+
+              <Animated.View style={[styles.matchBtnCol, { opacity: matchFadeIn }]}>
+                <Button
+                  title="Send Message"
+                  variant="gradient"
+                  size="lg"
+                  icon="chatbubbles"
+                  fullWidth
+                  onPress={() => {
+                    setShowMatchModal(false);
+                    router.push(`/chat/${matchedProfile?.id || '1'}`);
+                  }}
+                />
+                <TouchableOpacity style={styles.keepSwipingBtn} onPress={() => setShowMatchModal(false)}>
+                  <Text style={styles.keepSwipingText}>Keep Swiping</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </LinearGradient>
+          </Animated.View>
+        </View>
+      </Modal>
+
+      {/* ENHANCED FILTER MODAL */}
+      <Modal visible={showFilterModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.filterCard}>
+            <View style={styles.filterHeader}>
+              <Text style={styles.filterTitle}>Filter Matches</Text>
+              <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: height * 0.65 }}>
+              <View style={styles.filterField}>
+                <Text style={styles.filterLabel}>Age Range</Text>
+                <View style={styles.filterRow}>
+                  <TextInput
+                    style={styles.filterInput}
+                    value={minAge}
+                    onChangeText={setMinAge}
+                    keyboardType="number-pad"
+                    placeholder="Min"
+                  />
+                  <Text style={{ color: COLORS.textMuted }}>to</Text>
+                  <TextInput
+                    style={styles.filterInput}
+                    value={maxAge}
+                    onChangeText={setMaxAge}
+                    keyboardType="number-pad"
+                    placeholder="Max"
+                  />
+                </View>
+              </View>
+
+              <View style={styles.filterField}>
+                <Text style={styles.filterLabel}>Maximum Distance (km)</Text>
+                <TextInput
+                  style={styles.filterInputFull}
+                  value={maxDistance}
+                  onChangeText={setMaxDistance}
+                  keyboardType="number-pad"
+                  placeholder="50"
+                />
+              </View>
+
+              <View style={styles.filterField}>
+                <Text style={styles.filterLabel}>Gender</Text>
+                <View style={styles.filterGenderRow}>
+                  {[
+                    { key: 'all', icon: 'people', label: 'Everyone' },
+                    { key: 'male', icon: 'man', label: 'Men' },
+                    { key: 'female', icon: 'woman', label: 'Women' },
+                  ].map((g) => (
+                    <TouchableOpacity
+                      key={g.key}
+                      style={[styles.filterGenderBtn, filterGender === g.key && styles.filterGenderBtnActive]}
+                      onPress={() => setFilterGender(g.key)}
+                    >
+                      <Ionicons name={g.icon as any} size={18} color={filterGender === g.key ? COLORS.textInverse : COLORS.textMuted} />
+                      <Text style={[styles.filterGenderText, filterGender === g.key && styles.filterGenderTextActive]}>{g.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <TouchableOpacity
+                style={styles.filterToggleRow}
+                onPress={() => setVerifiedOnlyFilter(!verifiedOnlyFilter)}
+              >
+                <View style={[styles.filterCheckbox, verifiedOnlyFilter && styles.filterCheckboxActive]}>
+                  {verifiedOnlyFilter && <Ionicons name="checkmark" size={16} color={COLORS.textInverse} />}
+                </View>
+                <Text style={styles.filterToggleText}>Verified Profiles Only</Text>
+              </TouchableOpacity>
+
+              <View style={styles.filterField}>
+                <Text style={styles.filterLabel}>Community</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  <View style={styles.filterChipRow}>
+                    <TouchableOpacity
+                      style={[styles.filterChip, filterCommunity === '' && styles.filterChipActive]}
+                      onPress={() => setFilterCommunity('')}
+                    >
+                      <Text style={[styles.filterChipText, filterCommunity === '' && styles.filterChipTextActive]}>All</Text>
+                    </TouchableOpacity>
+                    {['Yoruba', 'Igbo', 'Hausa', 'Swahili', 'Zulu', 'Amhara'].map((c) => (
+                      <TouchableOpacity
+                        key={c}
+                        style={[styles.filterChip, filterCommunity === c && styles.filterChipActive]}
+                        onPress={() => setFilterCommunity(c)}
+                      >
+                        <Text style={[styles.filterChipText, filterCommunity === c && styles.filterChipTextActive]}>{c}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              </View>
+
+              <View style={styles.filterField}>
+                <Text style={styles.filterLabel}>Interests</Text>
+                <View style={styles.filterChipRow}>
+                  {['Technology', 'Music', 'Travel', 'Cooking', 'Fitness', 'Art', 'Fashion', 'Reading'].map((interest) => (
+                    <TouchableOpacity
+                      key={interest}
+                      style={[styles.filterChip, filterInterests.includes(interest) && styles.filterChipActive]}
+                      onPress={() => {
+                        setFilterInterests((prev) =>
+                          prev.includes(interest) ? prev.filter((i) => i !== interest) : [...prev, interest]
+                        );
+                      }}
+                    >
+                      <Text style={[styles.filterChipText, filterInterests.includes(interest) && styles.filterChipTextActive]}>{interest}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </ScrollView>
+
+            <View style={styles.filterActions}>
+              <TouchableOpacity
+                style={styles.filterResetBtn}
+                onPress={() => {
+                  setMinAge('18'); setMaxAge('35'); setMaxDistance('50');
+                  setVerifiedOnlyFilter(false); setFilterGender('all');
+                  setFilterInterests([]); setFilterCommunity('');
+                }}
+              >
+                <Text style={styles.filterResetText}>Reset</Text>
+              </TouchableOpacity>
+              <View style={{ flex: 1 }}>
+                <Button
+                  title="Apply Filters"
+                  variant="gradient"
+                  size="md"
+                  fullWidth
+                  onPress={() => setShowFilterModal(false)}
+                />
+              </View>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -557,4 +901,66 @@ const styles = StyleSheet.create({
   },
   quickActionLabel: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: 2 },
   quickActionCount: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.medium, color: COLORS.primary },
+  modalOverlayDark: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.85)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg,
+  },
+  matchModalContainer: {
+    width: '100%', maxWidth: 400, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl, alignItems: 'center',
+  },
+  modalCloseBtn: { alignSelf: 'flex-end', padding: 4 },
+  matchHeaderBox: { alignItems: 'center', marginTop: 12, marginBottom: SPACING.lg },
+  matchTitleText: { fontSize: 32, fontFamily: FONTS.extraBold, color: '#FFFFFF', letterSpacing: -1, marginBottom: 8 },
+  matchSubtitleText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.8)', textAlign: 'center' },
+  matchAvatarsRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginVertical: SPACING.xl },
+  matchAvatarCircle: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
+  matchAvatarText: { fontSize: 22, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  matchHeartIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.15)', alignItems: 'center', justifyContent: 'center' },
+  matchCompatBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: BORDER_RADIUS.full, marginBottom: SPACING.xl },
+  matchCompatBadgeText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.bold, color: COLORS.accent },
+  matchBtnCol: { width: '100%', gap: SPACING.md },
+  keepSwipingBtn: { paddingVertical: 14, alignItems: 'center' },
+  keepSwipingText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: 'rgba(255,255,255,0.7)' },
+  matchSparkleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+  matchParticlesContainer: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, overflow: 'hidden' },
+  matchParticle: { position: 'absolute' },
+  matchAvatarOuter: { alignItems: 'center', gap: 6 },
+  matchAvatarLabel: { fontSize: 12, fontFamily: FONTS.semiBold, color: 'rgba(255,255,255,0.7)' },
+  matchCompatDetails: { flexDirection: 'row', gap: 12, marginBottom: SPACING.xl },
+  matchCompatDetailItem: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.08)', paddingHorizontal: 10, paddingVertical: 6, borderRadius: BORDER_RADIUS.full },
+  matchCompatDetailText: { fontSize: 11, fontFamily: FONTS.medium, color: 'rgba(255,255,255,0.7)' },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: SPACING.lg },
+  filterCard: { width: '100%', maxWidth: 420, backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl, ...SHADOWS.lg },
+  filterHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg },
+  filterTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.bold, color: COLORS.text },
+  filterField: { marginBottom: SPACING.lg },
+  filterLabel: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text, marginBottom: 8 },
+  filterRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
+  filterInput: { flex: 1, borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: FONT_SIZES.md, color: COLORS.text },
+  filterInputFull: { borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md, paddingHorizontal: 12, paddingVertical: 10, fontSize: FONT_SIZES.md, color: COLORS.text },
+  filterGenderRow: { flexDirection: 'row', gap: SPACING.sm },
+  filterGenderBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 12, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface,
+  },
+  filterGenderBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterGenderText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
+  filterGenderTextActive: { color: COLORS.textInverse },
+  filterCheckbox: {
+    width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: COLORS.border,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  filterCheckboxActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterToggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: SPACING.lg },
+  filterToggleText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.medium, color: COLORS.text },
+  filterChipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  filterChip: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: BORDER_RADIUS.full,
+    borderWidth: 1, borderColor: COLORS.border, backgroundColor: COLORS.surface,
+  },
+  filterChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  filterChipText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
+  filterChipTextActive: { color: COLORS.textInverse },
+  filterActions: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md, marginTop: SPACING.md },
+  filterResetBtn: { paddingHorizontal: SPACING.md, paddingVertical: 12 },
+  filterResetText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
 });

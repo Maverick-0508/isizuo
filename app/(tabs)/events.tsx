@@ -1,13 +1,14 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Dimensions, Modal, Alert, Platform } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from '@/hooks';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Badge, Button, Card } from '@/components/ui';
 import { Logo } from '@/components/Logo';
 import { useEventStore } from '@/stores';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
 const EVENT_CATEGORIES = [
   { key: 'all', labelKey: 'explore' as const, icon: 'globe' },
@@ -17,23 +18,49 @@ const EVENT_CATEGORIES = [
   { key: 'sports', labelKey: 'hobby_groups' as const, icon: 'football' },
 ];
 
-const SAMPLE_EVENTS = [
-  { id: '1', title: 'Lagos Tech Meetup', date: 'Sat, Jul 26', time: '6:00 PM', location: 'Eko Convention Centre, Lagos', category: 'professional', attendees: 128, isFree: true, color: '#5B4BD5', description: 'Connect with Africa\'s brightest tech minds.', rsvp: false },
-  { id: '2', title: 'Nairobi Sunset Mixer', date: 'Fri, Jul 25', time: '5:00 PM', location: 'Nairobi Arboretum', category: 'social', attendees: 86, isFree: true, color: '#B32464', description: 'Network over drinks and live music.', rsvp: false },
-  { id: '3', title: 'Afro-Cultural Night', date: 'Sat, Aug 2', time: '7:00 PM', location: 'Addis Ababa Cultural Centre', category: 'cultural', attendees: 240, isFree: false, color: '#E8A820', description: 'Celebrate African heritage through art and dance.', rsvp: false },
-  { id: '4', title: '5K Charity Run', date: 'Sun, Jul 27', time: '7:00 AM', location: 'Johannesburg Zoo Lake', category: 'sports', attendees: 64, isFree: false, color: '#00A878', description: 'Run for a cause. All proceeds go to education.', rsvp: false },
-  { id: '5', title: 'Women in Business Summit', date: 'Aug 15', time: '9:00 AM', location: 'Abuja International Conference Centre', category: 'professional', attendees: 310, isFree: false, color: '#8B7FF5', description: 'Empowering women entrepreneurs across Africa.', rsvp: false },
-];
-
 export default function EventsScreen() {
   const { t } = useTranslation();
-  const { events: storeEvents, isLoading, fetchEvents, rsvpEvent, userEvents } = useEventStore();
+  const { events: storeEvents, isLoading, fetchEvents, rsvpEvent, userEvents, createEvent } = useEventStore();
   const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Create Event Modal State
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTitle, setNewTitle] = useState('');
+  const [newDate, setNewDate] = useState('');
+  const [newTime, setNewTime] = useState('');
+  const [newLocation, setNewLocation] = useState('');
+  const [newCategory, setNewCategory] = useState<'social' | 'professional' | 'cultural' | 'sports'>('social');
+  const [newDescription, setNewDescription] = useState('');
 
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  const handleCreateEventSubmit = async () => {
+    if (!newTitle.trim() || !newLocation.trim()) {
+      Alert.alert('Error', 'Please fill in event title and location');
+      return;
+    }
+    await createEvent({
+      title: newTitle.trim(),
+      date: newDate.trim() || 'Sat, Aug 9',
+      time: newTime.trim() || '6:00 PM',
+      location: newLocation.trim(),
+      category: newCategory,
+      maxAttendees: 100,
+      isFree: true,
+      description: newDescription.trim() || 'Join us for a fantastic community event!',
+      organizerId: 'user-1',
+    });
+    setShowCreateModal(false);
+    setNewTitle('');
+    setNewDate('');
+    setNewTime('');
+    setNewLocation('');
+    setNewDescription('');
+    Alert.alert('Event Created', 'Your new event has been published to the community!');
+  };
 
   const events = storeEvents.length > 0 ? storeEvents : [];
 
@@ -71,7 +98,7 @@ export default function EventsScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle} accessibilityRole="header">{t('events')}</Text>
         </View>
-        <TouchableOpacity style={styles.createBtn} onPress={() => Alert.alert('Create Event', 'Submit your event proposal to your local community.')} accessibilityRole="button" accessibilityLabel={t('create_event')}>
+        <TouchableOpacity style={styles.createBtn} onPress={() => setShowCreateModal(true)} accessibilityRole="button" accessibilityLabel={t('create_event')}>
           <Ionicons name="add" size={24} color={COLORS.textInverse} />
         </TouchableOpacity>
       </View>
@@ -185,6 +212,106 @@ export default function EventsScreen() {
           <Text style={styles.emptyDesc}>{t('rsvp_to_events')}</Text>
         </View>
       </ScrollView>
+
+      {/* CREATE EVENT MODAL */}
+      <Modal visible={showCreateModal} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.createModalCard}>
+            <LinearGradient colors={GRADIENTS.primary} style={styles.createModalHeader}>
+              <Text style={styles.createModalTitle}>Create Event</Text>
+              <TouchableOpacity onPress={() => setShowCreateModal(false)}>
+                <Ionicons name="close" size={24} color="#FFFFFF" />
+              </TouchableOpacity>
+            </LinearGradient>
+
+            <ScrollView showsVerticalScrollIndicator={false} style={styles.createModalBody}>
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Event Title</Text>
+                <TextInput
+                  style={styles.createInput}
+                  value={newTitle}
+                  onChangeText={setNewTitle}
+                  placeholder="e.g. Lagos Tech Meetup"
+                  placeholderTextColor={COLORS.textLight}
+                />
+              </View>
+
+              <View style={styles.createFieldRow}>
+                <View style={styles.createFieldHalf}>
+                  <Text style={styles.createLabel}>Date</Text>
+                  <TextInput
+                    style={styles.createInput}
+                    value={newDate}
+                    onChangeText={setNewDate}
+                    placeholder="e.g. Sat, Aug 9"
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                </View>
+                <View style={styles.createFieldHalf}>
+                  <Text style={styles.createLabel}>Time</Text>
+                  <TextInput
+                    style={styles.createInput}
+                    value={newTime}
+                    onChangeText={setNewTime}
+                    placeholder="e.g. 6:00 PM"
+                    placeholderTextColor={COLORS.textLight}
+                  />
+                </View>
+              </View>
+
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Location</Text>
+                <TextInput
+                  style={styles.createInput}
+                  value={newLocation}
+                  onChangeText={setNewLocation}
+                  placeholder="e.g. The Hub, Lagos"
+                  placeholderTextColor={COLORS.textLight}
+                />
+              </View>
+
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Category</Text>
+                <View style={styles.createCategoryRow}>
+                  {(['social', 'professional', 'cultural', 'sports'] as const).map((cat) => (
+                    <TouchableOpacity
+                      key={cat}
+                      style={[styles.createCategoryBtn, newCategory === cat && styles.createCategoryBtnActive]}
+                      onPress={() => setNewCategory(cat)}
+                    >
+                      <Ionicons
+                        name={cat === 'social' ? 'people' : cat === 'professional' ? 'briefcase' : cat === 'cultural' ? 'globe' : 'football'}
+                        size={16}
+                        color={newCategory === cat ? COLORS.textInverse : COLORS.textMuted}
+                      />
+                      <Text style={[styles.createCategoryText, newCategory === cat && styles.createCategoryTextActive]}>
+                        {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.createField}>
+                <Text style={styles.createLabel}>Description</Text>
+                <TextInput
+                  style={[styles.createInput, styles.createTextArea]}
+                  value={newDescription}
+                  onChangeText={setNewDescription}
+                  placeholder="Describe your event..."
+                  placeholderTextColor={COLORS.textLight}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+            </ScrollView>
+
+            <View style={styles.createModalFooter}>
+              <Button title="Publish Event" variant="gradient" size="lg" fullWidth onPress={handleCreateEventSubmit} />
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -247,4 +374,35 @@ const styles = StyleSheet.create({
   },
   emptyTitle: { fontSize: FONT_SIZES.md, fontFamily: FONTS.bold, color: COLORS.text },
   emptyDesc: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 4 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', padding: SPACING.lg },
+  createModalCard: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden',
+    maxHeight: height * 0.85, ...SHADOWS.lg,
+  },
+  createModalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: SPACING.lg,
+  },
+  createModalTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: '#FFFFFF' },
+  createModalBody: { padding: SPACING.lg },
+  createField: { marginBottom: SPACING.md },
+  createFieldRow: { flexDirection: 'row', gap: SPACING.md, marginBottom: SPACING.sm },
+  createFieldHalf: { flex: 1, marginBottom: SPACING.md },
+  createLabel: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text, marginBottom: 6 },
+  createInput: {
+    borderWidth: 1, borderColor: COLORS.border, borderRadius: BORDER_RADIUS.md,
+    paddingHorizontal: 14, paddingVertical: 12, fontSize: FONT_SIZES.md, color: COLORS.text,
+    backgroundColor: COLORS.background,
+  },
+  createTextArea: { height: 80, textAlignVertical: 'top' },
+  createCategoryRow: { flexDirection: 'row', gap: SPACING.sm },
+  createCategoryBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 4,
+    paddingVertical: 10, borderRadius: BORDER_RADIUS.md, borderWidth: 1, borderColor: COLORS.border,
+    backgroundColor: COLORS.surface,
+  },
+  createCategoryBtnActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+  createCategoryText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.textMuted },
+  createCategoryTextActive: { color: COLORS.textInverse },
+  createModalFooter: { padding: SPACING.lg, borderTopWidth: 1, borderTopColor: COLORS.borderLight },
 });

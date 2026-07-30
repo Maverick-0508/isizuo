@@ -593,9 +593,15 @@ export const useEventStore = create<EventState>((set, get) => ({
   },
 
   createEvent: async (eventData) => {
+    const newEvent: Event = {
+      id: Date.now().toString(),
+      currentAttendees: 1,
+      createdAt: new Date().toISOString(),
+      ...eventData,
+    };
+    set((state) => ({ events: [newEvent, ...state.events], userEvents: [newEvent.id, ...state.userEvents] }));
     try {
-      const { error } = await supabase.from('events').insert(eventData);
-      if (error) throw error;
+      await supabase.from('events').insert(eventData);
     } catch (error) {
       console.error('Create event error:', error);
     }
@@ -608,6 +614,7 @@ interface CommunityState {
   isLoading: boolean;
   fetchCommunities: () => Promise<void>;
   joinCommunity: (communityId: string) => void;
+  createCommunity: (community: Omit<Community, 'id' | 'memberCount' | 'createdAt'>) => Promise<void>;
 }
 
 export const useCommunityStore = create<CommunityState>((set) => ({
@@ -633,6 +640,21 @@ export const useCommunityStore = create<CommunityState>((set) => ({
     set((state) => ({
       userCommunities: [...state.userCommunities, communityId],
     }));
+  },
+
+  createCommunity: async (communityData) => {
+    const newComm: Community = {
+      id: Date.now().toString(),
+      memberCount: 1,
+      createdAt: new Date().toISOString(),
+      ...communityData,
+    };
+    set((state) => ({ communities: [newComm, ...state.communities], userCommunities: [newComm.id, ...state.userCommunities] }));
+    try {
+      await supabase.from('communities').insert(communityData);
+    } catch (error) {
+      console.error('Create community error:', error);
+    }
   },
 }));
 
