@@ -200,5 +200,16 @@
   "boost": "Ongeza",
   "pass_action": "Ruka",
   "by_continuing": "Kwa kuendelea, unakubali",
-  "and": "na"
+  "and": "na",
+  "resend_code": "Tuma tena msimbo",
+  "sending": "Inatuma...",
+  "streak": "Mfululizo",
+  "day_streak": "siku mfululizo",
+  "longest_streak": "Mfululizo mrefu zaidi",
+  "notifications_settings": "Mipangilio ya Arifa",
+  "push_enabled": "Arifa za Push",
+  "sms_enabled": "Arifa za SMS",
+  "match_alerts": "Arifa za Mechi",
+  "message_alerts": "Arifa za Ujumbe",
+  "event_alerts": "Vikumbusho vya Tukio"
 }

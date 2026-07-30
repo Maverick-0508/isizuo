@@ -1,12 +1,13 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, Modal, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
-import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS } from '@/constants';
+import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Badge, Avatar, Button } from '@/components/ui';
-import { useAuthStore, useAppStore, useMatchingStore } from '@/stores';
+import { useAuthStore, useAppStore, useMatchingStore, useStreakStore, useNotificationStore } from '@/stores';
 import { Logo } from '@/components/Logo';
+import { LinearGradient } from 'expo-linear-gradient';
 
 export default function ProfileScreen() {
   const { t, locale } = useTranslation();
@@ -14,7 +15,10 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuthStore();
   const { matches } = useMatchingStore();
+  const { currentStreak, longestStreak } = useStreakStore();
+  const { pushEnabled, smsEnabled, matchAlerts, messageAlerts, eventAlerts, setPushEnabled, setSmsEnabled, setMatchAlerts, setMessageAlerts, setEventAlerts, requestPermission } = useNotificationStore();
   const matchCount = matches.length;
+  const [showNotifModal, setShowNotifModal] = useState(false);
 
   const handleSignOut = () => {
     Alert.alert(t('sign_out'), t('confirm'), [
@@ -28,7 +32,7 @@ export default function ProfileScreen() {
     { icon: 'people-outline', label: t('family_values_title'), color: COLORS.accent, route: '/family' },
     { icon: 'shield-outline', label: t('safety_settings'), color: COLORS.safe, route: '/safety' },
     { icon: 'diamond-outline', label: t('subscription'), color: COLORS.premium, route: '/ussd' },
-    { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info, action: () => Alert.alert(t('notifications'), 'Push and SMS notifications enabled.') },
+    { icon: 'notifications-outline', label: t('notifications'), color: COLORS.info, action: () => setShowNotifModal(true) },
     { icon: 'help-circle-outline', label: t('help'), color: COLORS.accent, action: () => Alert.alert(t('help'), 'Need support? Contact support@isizuo.com or dial *384*99# for USSD support.') },
     { icon: 'document-text-outline', label: t('legal'), color: COLORS.textLight, action: () => Alert.alert(t('legal'), 'Isizuo Terms of Service and Privacy Policy v1.0') },
   ];
@@ -46,7 +50,7 @@ export default function ProfileScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.profileCard} accessibilityLabel="User profile">
           <View style={styles.avatarWrap}>
-            <Avatar name={user?.name || 'User'} size={96} isVerified={true} colorIndex={0} />
+            <Avatar name={user?.name || 'User'} size={96} isVerified={user?.kycLevel === 'tier_1' || user?.kycLevel === 'tier_2'} colorIndex={0} />
           </View>
           <Text style={styles.userName} accessibilityRole="header">{user?.name || 'User'}</Text>
           <Text style={styles.userEmail}>{user?.email || 'user@email.com'}</Text>
@@ -61,6 +65,11 @@ export default function ProfileScreen() {
           <TouchableOpacity style={styles.statItem} onPress={() => router.push('/(tabs)')}>
             <Text style={styles.statValue}>{matchCount}</Text>
             <Text style={styles.statLabel}>{t('matches')}</Text>
+          </TouchableOpacity>
+          <View style={styles.statDivider} />
+          <TouchableOpacity style={styles.statItem}>
+            <Text style={styles.statValue}>{currentStreak}</Text>
+            <Text style={styles.statLabel}>{t('day_streak')}</Text>
           </TouchableOpacity>
           <View style={styles.statDivider} />
           <TouchableOpacity style={styles.statItem} onPress={() => router.push('/ussd')}>
@@ -129,6 +138,90 @@ export default function ProfileScreen() {
         </TouchableOpacity>
 
         <Text style={styles.version}>Isizuo v1.0.0</Text>
+
+        {/* Notification Settings Modal */}
+        <Modal visible={showNotifModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.notifModal}>
+              <View style={styles.notifModalHeader}>
+                <Text style={styles.notifModalTitle}>{t('notifications_settings')}</Text>
+                <TouchableOpacity onPress={() => setShowNotifModal(false)}>
+                  <Ionicons name="close" size={24} color={COLORS.text} />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.notifModalBody}>
+                <View style={styles.notifToggle}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notifToggleLabel}>{t('push_enabled')}</Text>
+                    <Text style={styles.notifToggleDesc}>{t('notifications')}</Text>
+                  </View>
+                  <Switch
+                    value={pushEnabled}
+                    onValueChange={async (val) => {
+                      if (val) {
+                        const granted = await requestPermission();
+                        if (!granted) {
+                          Alert.alert('Permission Denied', 'Please enable notifications in your browser settings.');
+                          return;
+                        }
+                      }
+                      setPushEnabled(val);
+                    }}
+                    trackColor={{ false: COLORS.borderLight, true: COLORS.primary + '60' }}
+                    thumbColor={pushEnabled ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+                <View style={styles.notifToggle}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notifToggleLabel}>{t('sms_enabled')}</Text>
+                    <Text style={styles.notifToggleDesc}>{t('notifications')}</Text>
+                  </View>
+                  <Switch
+                    value={smsEnabled}
+                    onValueChange={setSmsEnabled}
+                    trackColor={{ false: COLORS.borderLight, true: COLORS.primary + '60' }}
+                    thumbColor={smsEnabled ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+                <View style={styles.notifDivider} />
+                <Text style={styles.notifSectionLabel}>{t('new_matches')}</Text>
+                <View style={styles.notifToggle}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notifToggleLabel}>{t('match_alerts')}</Text>
+                  </View>
+                  <Switch
+                    value={matchAlerts}
+                    onValueChange={setMatchAlerts}
+                    trackColor={{ false: COLORS.borderLight, true: COLORS.primary + '60' }}
+                    thumbColor={matchAlerts ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+                <View style={styles.notifToggle}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notifToggleLabel}>{t('message_alerts')}</Text>
+                  </View>
+                  <Switch
+                    value={messageAlerts}
+                    onValueChange={setMessageAlerts}
+                    trackColor={{ false: COLORS.borderLight, true: COLORS.primary + '60' }}
+                    thumbColor={messageAlerts ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+                <View style={styles.notifToggle}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.notifToggleLabel}>{t('event_alerts')}</Text>
+                  </View>
+                  <Switch
+                    value={eventAlerts}
+                    onValueChange={setEventAlerts}
+                    trackColor={{ false: COLORS.borderLight, true: COLORS.primary + '60' }}
+                    thumbColor={eventAlerts ? COLORS.primary : COLORS.textLight}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -186,4 +279,26 @@ const styles = StyleSheet.create({
   },
   signOutText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.danger },
   version: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', marginBottom: SPACING.xl },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', padding: SPACING.lg },
+  notifModal: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, overflow: 'hidden',
+    ...SHADOWS.lg,
+  },
+  notifModalHeader: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    padding: SPACING.lg, borderBottomWidth: 1, borderBottomColor: COLORS.borderLight,
+  },
+  notifModalTitle: { fontSize: FONT_SIZES.lg, fontFamily: FONTS.bold, color: COLORS.text, letterSpacing: -0.3 },
+  notifModalBody: { padding: SPACING.lg },
+  notifToggle: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  notifToggleLabel: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.text },
+  notifToggleDesc: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, marginTop: 2 },
+  notifDivider: { height: 1, backgroundColor: COLORS.borderLight, marginVertical: SPACING.sm },
+  notifSectionLabel: {
+    fontSize: FONT_SIZES.sm, fontFamily: FONTS.bold, color: COLORS.textLight, marginBottom: 4,
+    textTransform: 'uppercase', letterSpacing: 0.8,
+  },
 });

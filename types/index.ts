@@ -1,5 +1,23 @@
 export type Language = 'en' | 'yo' | 'sw' | 'ha' | 'am';
 
+export interface ProfilePrompt {
+  question: string;
+  answer: string;
+}
+
+export const PROMPT_QUESTIONS = [
+  "My simple pleasures",
+  "I'm weirdly good at",
+  "A life goal of mine",
+  "The way to my heart is",
+  "I feel most at home when",
+  "Biggest risk I've ever taken",
+  "My favorite African dish",
+  "Best travel story",
+  "I'm looking for someone who",
+  "My love language is",
+];
+
 export interface User {
   id: string;
   email: string;
@@ -14,6 +32,7 @@ export interface User {
   religion: string;
   values: string[];
   interests: string[];
+  prompts: ProfilePrompt[];
   familyValues: 'traditional' | 'modern' | 'balanced';
   lookingFor: 'relationship' | 'friendship' | 'marriage' | 'networking';
   location: string | { latitude: number; longitude: number };
@@ -24,6 +43,7 @@ export interface User {
   safetyScore: number;
   boostedUntil?: string;
   credits: number;
+  referralCode: string;
   createdAt: string;
   updatedAt: string;
   _compatibilityScore?: number;

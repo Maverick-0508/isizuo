@@ -10,7 +10,7 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
-import { useAuthStore } from '@/stores';
+import { useAuthStore, useStreakStore } from '@/stores';
 import { COLORS } from '@/constants';
 import { supabase } from '@/lib/supabase';
 import { User } from '@/types';
@@ -88,6 +88,8 @@ export default function RootLayout() {
   const { setUser, setSession } = useAuthStore();
   const [ready, setReady] = useState(false);
 
+  const { initStreak, checkIn } = useStreakStore();
+
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -121,6 +123,8 @@ export default function RootLayout() {
         } else {
           setUser(null);
         }
+        initStreak();
+        checkIn();
       } catch (_) {}
       setReady(true);
     }

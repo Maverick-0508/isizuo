@@ -1,5 +1,6 @@
+const APP_ORIGIN = Deno.env.get("APP_ORIGIN") || "https://isizuo.app";
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": APP_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -126,7 +127,7 @@ Deno.serve(async (req) => {
       console.warn("[send-otp] RESEND_API_KEY not set — code stored but email not sent");
     }
 
-    console.log(`[send-otp] Generated code for ${email}: ${code}`);
+    console.log(`[send-otp] Code generated for ${email}`);
 
     return new Response(
       JSON.stringify({ success: true, message: "Verification code sent" }),

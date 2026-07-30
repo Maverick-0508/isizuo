@@ -1,5 +1,6 @@
+const APP_ORIGIN = Deno.env.get("APP_ORIGIN") || "https://isizuo.app";
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": APP_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -29,7 +30,22 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const authSalt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
+    const authSalt = Deno.env.get("AUTH_SALT");
+
+    if (!supabaseUrl || !serviceRoleKey || !anonKey || !authSalt) {
+      console.error("[auto-signin] Missing required env vars");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    if (!authSalt) {
+      console.error("[auto-signin] AUTH_SALT not configured");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.49.0");
     const supabase = createClient(supabaseUrl, serviceRoleKey);

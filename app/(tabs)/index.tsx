@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions, Modal, Share, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,7 +7,7 @@ import { useTranslation } from '@/hooks';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button, Badge, Avatar, ActiveNowBadge } from '@/components/ui';
 import { Logo } from '@/components/Logo';
-import { useMatchingStore } from '@/stores';
+import { useMatchingStore, useAuthStore, useStreakStore } from '@/stores';
 
 const { width } = Dimensions.get('window');
 
@@ -32,11 +32,17 @@ const SAMPLE_MATCHES = [
 export default function MatchesScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { matches, isLoading, fetchMatches } = useMatchingStore();
+  const { matches, likesReceived, isLoading, fetchMatches, fetchLikesReceived, likeUser } = useMatchingStore();
+  const { user } = useAuthStore();
+  const { currentStreak } = useStreakStore();
   const [activeTab, setActiveTab] = useState<'matches' | 'likes' | 'visits'>('matches');
+
+  // Referral state
+  const [showReferralModal, setShowReferralModal] = useState(false);
 
   useEffect(() => {
     fetchMatches();
+    fetchLikesReceived();
   }, []);
 
   const displayMatches = matches.length > 0 ? matches : [];
@@ -47,6 +53,14 @@ export default function MatchesScreen() {
     { key: 'visits' as const, label: t('profile_views'), icon: 'eye' as const },
   ];
 
+  const handleShareReferral = async () => {
+    const code = user?.referralCode || 'ISIZUO';
+    const message = `${t('referral_share_text')}: ${code}`;
+    try {
+      await Share.share({ message });
+    } catch {}
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -54,8 +68,8 @@ export default function MatchesScreen() {
         <View style={styles.headerCenter}>
           <Text style={styles.headerTitle}>Isizuo</Text>
         </View>
-        <TouchableOpacity style={styles.notifBtn} onPress={() => Alert.alert('Notifications', 'You have no new notifications.')} accessibilityRole="button" accessibilityLabel={t('notifications')}>
-          <Ionicons name="notifications-outline" size={22} color={COLORS.text} />
+        <TouchableOpacity style={styles.notifBtn} onPress={() => setShowReferralModal(true)} accessibilityRole="button" accessibilityLabel={t('referral_title')}>
+          <Ionicons name="gift-outline" size={22} color={COLORS.text} />
           <View style={styles.notifDot} />
         </TouchableOpacity>
       </View>
@@ -142,21 +156,59 @@ export default function MatchesScreen() {
         )}
 
         {activeTab === 'likes' && (
-          <View style={styles.premiumPrompt}>
-            <LinearGradient
-              colors={GRADIENTS.sunset as readonly [string, string]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={styles.premiumIconWrap}
-            >
-              <Ionicons name="star" size={40} color={COLORS.textInverse} />
-            </LinearGradient>
-            <Text style={styles.premiumTitle} accessibilityRole="header">{t('likes_received')}</Text>
-            <Text style={styles.premiumDesc}>
-              {t('upgrade_to_see_likes')}
-            </Text>
-            <Button title={t('upgrade')} variant="gradient" onPress={() => router.push('/ussd')} icon="diamond" fullWidth gradient={GRADIENTS.sunset as readonly [string, string]} />
-          </View>
+          likesReceived.length > 0 ? (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>{t('who_likes_you_title')}</Text>
+                <Badge label={`${likesReceived.length} ${t('likes_you')}`} variant="premium" icon="star" />
+              </View>
+              {likesReceived.length === 0 ? (
+                <View style={styles.emptyLikes}>
+                  <Ionicons name="heart-outline" size={48} color={COLORS.textLight} />
+                  <Text style={styles.emptyLikesText}>{t('no_matches')}</Text>
+                </View>
+              ) : (
+                <View style={styles.likesGrid}>
+                  {likesReceived.map((liker: any, i: number) => (
+                    <TouchableOpacity key={liker.id} style={styles.likeCard}>
+                      <LinearGradient
+                        colors={[['#B32464', '#FF6B6B'], ['#5B4BD5', '#A29BFE'], ['#00B894', '#55EFC4'], ['#E8A820', '#FDCB6E'], ['#DC3545', '#FF6B6B'], ['#4A90D9', '#74B9FF']][i % 6] as readonly [string, string]}
+                        style={styles.likeAvatar}
+                      >
+                        <Text style={styles.likeAvatarText}>{(liker.name || 'U').charAt(0)}</Text>
+                      </LinearGradient>
+                      <Text style={styles.likeName} numberOfLines={1}>{liker.name}</Text>
+                      <Text style={styles.likeAge}>{liker.age || ''}</Text>
+                      <Button
+                        title={t('like_back')}
+                        variant="primary"
+                        size="sm"
+                        fullWidth
+                        icon="heart"
+                        onPress={() => { likeUser(liker.id); }}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            <View style={styles.premiumPrompt}>
+              <LinearGradient
+                colors={GRADIENTS.sunset as readonly [string, string]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                style={styles.premiumIconWrap}
+              >
+                <Ionicons name="star" size={40} color={COLORS.textInverse} />
+              </LinearGradient>
+              <Text style={styles.premiumTitle} accessibilityRole="header">{t('likes_received')}</Text>
+              <Text style={styles.premiumDesc}>
+                {t('upgrade_to_see_likes')}
+              </Text>
+              <Button title={t('upgrade')} variant="gradient" onPress={() => router.push('/ussd')} icon="diamond" fullWidth gradient={GRADIENTS.sunset as readonly [string, string]} />
+            </View>
+          )
         )}
 
         {activeTab === 'visits' && (
@@ -176,6 +228,51 @@ export default function MatchesScreen() {
             <Button title={t('upgrade')} variant="gradient" onPress={() => router.push('/ussd')} icon="diamond" fullWidth gradient={GRADIENTS.ocean as readonly [string, string]} />
           </View>
         )}
+        {/* Referral Modal */}
+        <Modal visible={showReferralModal} transparent animationType="slide">
+          <View style={styles.referralOverlay}>
+            <View style={styles.referralModal}>
+              <TouchableOpacity style={styles.referralCloseBtn} onPress={() => setShowReferralModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+
+              <LinearGradient colors={GRADIENTS.primary} style={styles.referralIconWrap}>
+                <Ionicons name="gift" size={40} color="#FFFFFF" />
+              </LinearGradient>
+              <Text style={styles.referralTitle}>{t('referral_title')}</Text>
+              <Text style={styles.referralDesc}>{t('referral_description')}</Text>
+
+              <View style={styles.referralCodeBox}>
+                <Text style={styles.referralCodeLabel}>{t('referral_code')}</Text>
+                <Text style={styles.referralCode}>{user?.referralCode || 'ISIZUO'}</Text>
+              </View>
+
+              <View style={styles.referralStatsRow}>
+                <TouchableOpacity style={styles.referralStat} onPress={handleShareReferral}>
+                  <Ionicons name="share-social" size={24} color={COLORS.primary} />
+                  <Text style={styles.referralStatValue}>{t('referral_share')}</Text>
+                </TouchableOpacity>
+                <View style={styles.referralStat}>
+                  <Ionicons name="people" size={24} color={COLORS.primary} />
+                  <Text style={styles.referralStatValue}>0 {t('people_joined')}</Text>
+                </View>
+                <View style={styles.referralStat}>
+                  <Ionicons name="cash" size={24} color={COLORS.primary} />
+                  <Text style={styles.referralStatValue}>0 {t('earn_credits')}</Text>
+                </View>
+              </View>
+
+              <Button
+                title={t('referral_share')}
+                variant="gradient"
+                size="lg"
+                fullWidth
+                icon="share-social"
+                onPress={handleShareReferral}
+              />
+            </View>
+          </View>
+        </Modal>
       </ScrollView>
     </View>
   );
@@ -245,6 +342,39 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.primary + '12', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3,
   },
   chatCompatText: { fontSize: 12, fontFamily: FONTS.bold, color: COLORS.primary },
+  emptyLikes: { alignItems: 'center', padding: SPACING.xl * 2 },
+  emptyLikesText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.medium, color: COLORS.textLight, marginTop: SPACING.md },
+  likesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm, paddingHorizontal: SPACING.lg },
+  likeCard: {
+    width: (width - SPACING.lg * 2 - SPACING.sm * 2) / 3,
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, padding: SPACING.sm,
+    alignItems: 'center', ...SHADOWS.sm, marginBottom: SPACING.sm,
+  },
+  likeAvatar: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
+  likeAvatarText: { fontSize: 22, fontFamily: FONTS.extraBold, color: '#FFFFFF' },
+  likeName: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text, textAlign: 'center' },
+  likeAge: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: 8 },
+  referralOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', padding: SPACING.lg },
+  referralModal: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl,
+    alignItems: 'center', ...SHADOWS.lg,
+  },
+  referralCloseBtn: { alignSelf: 'flex-end' },
+  referralIconWrap: {
+    width: 80, height: 80, borderRadius: 24, alignItems: 'center', justifyContent: 'center',
+    marginBottom: SPACING.lg,
+  },
+  referralTitle: { fontSize: FONT_SIZES.xxl, fontFamily: FONTS.extraBold, color: COLORS.text, letterSpacing: -0.8, marginBottom: 8 },
+  referralDesc: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textLight, textAlign: 'center', lineHeight: 22, marginBottom: SPACING.lg },
+  referralCodeBox: {
+    backgroundColor: COLORS.primaryGlow, borderRadius: BORDER_RADIUS.lg, padding: SPACING.lg,
+    width: '100%', alignItems: 'center', marginBottom: SPACING.lg,
+  },
+  referralCodeLabel: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.primary, textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 6 },
+  referralCode: { fontSize: 30, fontFamily: FONTS.extraBold, color: COLORS.primary, letterSpacing: 4 },
+  referralStatsRow: { flexDirection: 'row', gap: SPACING.lg, marginBottom: SPACING.lg },
+  referralStat: { alignItems: 'center', gap: 6 },
+  referralStatValue: { fontSize: FONT_SIZES.sm, fontFamily: FONT_SIZES.semiBold, color: COLORS.text },
   premiumPrompt: {
     alignItems: 'center', padding: SPACING.xl, backgroundColor: COLORS.surface,
     borderRadius: BORDER_RADIUS.xl, marginHorizontal: SPACING.lg, marginTop: SPACING.md, ...SHADOWS.md,

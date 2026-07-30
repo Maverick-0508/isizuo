@@ -154,11 +154,12 @@ describe('Post-verification routing for multiple users', () => {
       expect(chain.single).toHaveBeenCalled();
 
       // Second call: insert default profile
-      expect(chain.insert).toHaveBeenCalledWith({
+      expect(chain.insert).toHaveBeenCalledWith(expect.objectContaining({
         id: 'new-user-1',
         email: 'new@test.com',
         name: '',
-      });
+        referral_code: expect.any(String),
+      }));
     });
   });
 

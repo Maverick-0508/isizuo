@@ -200,5 +200,16 @@
   "boost": "ያበረከቱ",
   "pass_action": "ይላፍ",
   "by_continuing": "በመቀጠል፣ ይህን ይቀበሉ",
-  "and": "እና"
+  "and": "እና",
+  "resend_code": "ኮዱን እንደገና ላክ",
+  "sending": "በመላክ ላይ...",
+  "streak": "ተከታታይ",
+  "day_streak": "የቀን ተከታታይ",
+  "longest_streak": "ረጅሙ ተከታታይ",
+  "notifications_settings": "የማሳወቂያ ቅንብሮች",
+  "push_enabled": "የግፋ ማሳወቂያ",
+  "sms_enabled": "የኤስኤምኤስ ማሳወቂያ",
+  "match_alerts": "የተገናኘ ማንቂያዎች",
+  "message_alerts": "የመልእክት ማንቂያዎች",
+  "event_alerts": "የክስተት አስታዋሾች"
 }

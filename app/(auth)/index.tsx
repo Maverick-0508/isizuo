@@ -1,30 +1,33 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Dimensions, Platform, KeyboardAvoidingView, ScrollView, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from '@/hooks';
-import { useAuthStore } from '@/stores';
 import { COLORS, SPACING, FONT_SIZES, BORDER_RADIUS, SHADOWS, FONTS, GRADIENTS } from '@/constants';
 import { Button } from '@/components/ui';
+import { sendOTP } from '@/services/sms';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const router = useRouter();
-  const { signIn } = useAuthStore();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleContinue = async () => {
+  const handleSendOTP = async () => {
     if (!email.trim()) return;
     setError('');
     setIsLoading(true);
     try {
-      await signIn(email.trim());
-      router.replace('/(tabs)');
+      const result = await sendOTP(email.trim());
+      if (!result || !result.success) {
+        throw new Error(result?.message || 'Failed to send code');
+      }
+      Alert.alert(t('otp_sent'), t('enter_otp'));
+      router.push(`/(auth)/verify?email=${encodeURIComponent(email.trim())}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('error'));
     } finally {
@@ -108,8 +111,8 @@ export default function LoginScreen() {
             ) : null}
 
             <Button
-              title={t('continue_with_email')}
-              onPress={handleContinue}
+              title={t('send_otp')}
+              onPress={handleSendOTP}
               variant="gradient"
               size="lg"
               fullWidth

@@ -1,5 +1,6 @@
+const APP_ORIGIN = Deno.env.get("APP_ORIGIN") || "https://isizuo.app";
 const corsHeaders = {
-  "Access-Control-Allow-Origin": Deno.env.get("APP_ORIGIN") || "*",
+  "Access-Control-Allow-Origin": APP_ORIGIN,
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
@@ -29,9 +30,9 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const authSalt = Deno.env.get("AUTH_SALT") || "isizuo-auth-salt-2024";
+    const authSalt = Deno.env.get("AUTH_SALT");
 
-    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+    if (!supabaseUrl || !serviceRoleKey || !anonKey || !authSalt) {
       console.error("[verify-otp] Missing required env vars");
       return new Response(
         JSON.stringify({ error: "Server configuration error" }),
@@ -47,7 +48,6 @@ Deno.serve(async (req) => {
       .from("otp_codes")
       .select("*", { count: "exact", head: true })
       .eq("email", email)
-      .eq("used", false)
       .gte("created_at", fiveMinAgo);
 
     if (count && count >= 10) {
@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
       .from("otp_codes")
       .delete()
       .eq("email", email)
-      .eq("used", true);
+      .lt("expires_at", new Date().toISOString());
 
     const { data: otpRecord, error: otpError } = await supabase
       .from("otp_codes")
@@ -100,7 +100,8 @@ Deno.serve(async (req) => {
     await supabase
       .from("otp_codes")
       .update({ used: true })
-      .eq("id", otpRecord.id);
+      .eq("id", otpRecord.id)
+      .eq("used", false);
 
     const raw = email + "-" + authSalt;
     const encoded = btoa(raw).replace(/[^a-zA-Z0-9]/g, "");

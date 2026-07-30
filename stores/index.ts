@@ -1,6 +1,18 @@
 import { create } from 'zustand';
 import { User, Match, Message, Event, Community, SafetyCheckIn, Report, Language } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { verifyOTP } from '@/services/sms';
+
+const PUBLIC_PROFILE_COLUMNS = 'id, name, age, gender, bio, photos, languages, community, religion, values, interests, prompts, family_values, looking_for, is_verified, is_photo_verified, kyc_level, safety_score, credits, referral_code, boosted_until, created_at, updated_at';
+
+const PUBLIC_PROFILE_COLUMNS_WITH_LOCATION = PUBLIC_PROFILE_COLUMNS + ', latitude, longitude';
+
+function roundCoordinates(lat: number, lon: number, precision = 1) {
+  return {
+    latitude: parseFloat(lat.toFixed(precision)),
+    longitude: parseFloat(lon.toFixed(precision)),
+  };
+}
 
 function mapDbProfileToUser(row: any): User {
   return {
@@ -17,16 +29,18 @@ function mapDbProfileToUser(row: any): User {
     religion: row.religion || '',
     values: row.values || [],
     interests: row.interests || [],
+    prompts: row.prompts || [],
     familyValues: row.family_values || 'balanced',
     lookingFor: row.looking_for || 'relationship',
     location: (row.latitude && row.longitude)
-      ? { latitude: row.latitude, longitude: row.longitude }
+      ? roundCoordinates(row.latitude, row.longitude, 1)
       : '',
     isVerified: row.is_verified || false,
     isPhotoVerified: row.is_photo_verified || false,
     kycLevel: row.kyc_level || 'none',
     safetyScore: row.safety_score ?? 50,
     credits: row.credits ?? 10,
+    referralCode: row.referral_code || '',
     boostedUntil: row.boosted_until || undefined,
     createdAt: row.created_at || new Date().toISOString(),
     updatedAt: row.updated_at || new Date().toISOString(),
@@ -45,6 +59,8 @@ function mapUserToDbUpdates(updates: Partial<User>): Record<string, any> {
   if (updates.religion !== undefined) dbUpdates.religion = updates.religion;
   if (updates.values !== undefined) dbUpdates.values = updates.values;
   if (updates.interests !== undefined) dbUpdates.interests = updates.interests;
+  if (updates.prompts !== undefined) dbUpdates.prompts = updates.prompts;
+  if (updates.referralCode !== undefined) dbUpdates.referral_code = updates.referralCode;
   if (updates.familyValues !== undefined) dbUpdates.family_values = updates.familyValues;
   if (updates.lookingFor !== undefined) dbUpdates.looking_for = updates.lookingFor;
   if (updates.phone !== undefined) dbUpdates.phone = updates.phone;
@@ -79,6 +95,7 @@ interface AuthState {
   setUser: (user: User | null) => void;
   setSession: (session: any) => void;
   signIn: (email: string) => Promise<void>;
+  verifySignIn: (email: string, code: string) => Promise<void>;
   signOut: () => Promise<void>;
   updateProfile: (updates: Partial<User>) => Promise<void>;
 }
@@ -115,12 +132,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       let profile = await fetchUserProfile(data.session.user.id);
       if (!profile) {
+        const referralCode = email.split('@')[0].slice(0, 6).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
         const { error: insertError } = await supabase
           .from('profiles')
           .insert({
             id: data.session.user.id,
             email,
             name: '',
+            referral_code: referralCode,
           });
         if (!insertError) {
           profile = await fetchUserProfile(data.session.user.id);
@@ -134,6 +153,43 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
     } catch (error) {
       console.error('Sign in error:', error);
+      throw error;
+    }
+  },
+
+  verifySignIn: async (email: string, code: string) => {
+    try {
+      const result = await verifyOTP(email, code);
+      if (!result) throw new Error('Verification failed. Please try again.');
+
+      await supabase.auth.setSession({
+        access_token: result.session.access_token,
+        refresh_token: result.session.refresh_token,
+      });
+
+      let profile = await fetchUserProfile(result.session.user.id);
+      if (!profile) {
+        const referralCode = email.split('@')[0].slice(0, 6).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase();
+        const { error: insertError } = await supabase
+          .from('profiles')
+          .insert({
+            id: result.session.user.id,
+            email,
+            name: '',
+            referral_code: referralCode,
+          });
+        if (!insertError) {
+          profile = await fetchUserProfile(result.session.user.id);
+        }
+      }
+
+      set({
+        session: result.session,
+        user: profile,
+        isAuthenticated: true,
+      });
+    } catch (error) {
+      console.error('Verify sign in error:', error);
       throw error;
     }
   },
@@ -168,6 +224,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 interface MatchingState {
   matches: Match[];
   potentialMatches: User[];
+  likesReceived: User[];
   currentMatchIndex: number;
   isLoading: boolean;
   setMatches: (matches: Match[]) => void;
@@ -177,11 +234,13 @@ interface MatchingState {
   superLikeUser: (userId: string) => Promise<void>;
   fetchPotentialMatches: () => Promise<void>;
   fetchMatches: () => Promise<void>;
+  fetchLikesReceived: () => Promise<void>;
 }
 
 export const useMatchingStore = create<MatchingState>((set, get) => ({
   matches: [],
   potentialMatches: [],
+  likesReceived: [],
   currentMatchIndex: 0,
   isLoading: false,
 
@@ -208,10 +267,12 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
         .single();
 
       if (reverseSwipe) {
+        const otherProfile = await fetchUserProfile(userId);
+        const score = otherProfile ? calculateCompatibility(user, otherProfile) : 50;
         await supabase.from('matches').insert({
           user_1: user.id,
           user_2: userId,
-          compatibility_score: Math.floor(Math.random() * 40) + 60,
+          compatibility_score: score,
         });
       }
 
@@ -264,7 +325,7 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(PUBLIC_PROFILE_COLUMNS_WITH_LOCATION)
         .neq('id', user.id)
         .limit(50);
       if (error) throw error;
@@ -293,7 +354,7 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('matches')
-        .select('*, user_1_profile:profiles!matches_user_1_fkey(*), user_2_profile:profiles!matches_user_2_fkey(*)')
+        .select(`*, user_1_profile:profiles!matches_user_1_fkey(${PUBLIC_PROFILE_COLUMNS_WITH_LOCATION}), user_2_profile:profiles!matches_user_2_fkey(${PUBLIC_PROFILE_COLUMNS_WITH_LOCATION})`)
         .or(`user_1.eq.${user.id},user_2.eq.${user.id}`)
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -318,6 +379,25 @@ export const useMatchingStore = create<MatchingState>((set, get) => ({
     } catch (error) {
       console.error('Fetch matches error:', error);
       set({ isLoading: false });
+    }
+  },
+
+  fetchLikesReceived: async () => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('swipes')
+        .select(`swiper_id, profiles!swipes_swiper_id_fkey(${PUBLIC_PROFILE_COLUMNS_WITH_LOCATION})`)
+        .eq('swiped_id', user.id)
+        .in('action', ['like', 'super_like'])
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+
+      const likedBy = (data || []).map((s: any) => mapDbProfileToUser(s.profiles));
+      set({ likesReceived: likedBy });
+    } catch (error) {
+      console.error('Fetch likes error:', error);
     }
   },
 }));
@@ -482,6 +562,7 @@ interface SafetyState {
   triggerEmergency: () => Promise<void>;
   reportUser: (reportedUserId: string, reason: Report['reason'], description: string) => Promise<void>;
   addTrustedContact: (phone: string) => void;
+  fetchTrustedContacts: () => Promise<void>;
 }
 
 export const useSafetyStore = create<SafetyState>((set, get) => ({
@@ -493,40 +574,76 @@ export const useSafetyStore = create<SafetyState>((set, get) => ({
     const { user } = useAuthStore.getState();
     if (!user) return;
 
-    const checkIn: SafetyCheckIn = {
-      id: Date.now().toString(),
-      userId: user.id,
-      matchId,
-      location: typeof user.location === 'object' && user.location !== null ? user.location : { latitude: 0, longitude: 0 },
-      status: 'active',
-      emergencyContacts: get().trustedContacts,
-      checkInInterval: 30,
-      lastCheckIn: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
-    };
+    const location = typeof user.location === 'object' && user.location !== null ? user.location : { latitude: 0, longitude: 0 };
 
-    set({ activeCheckIn: checkIn });
+    try {
+      const { data, error } = await supabase
+        .from('safety_check_ins')
+        .insert({
+          user_id: user.id,
+          match_id: matchId,
+          latitude: location.latitude,
+          longitude: location.longitude,
+          status: 'active',
+          emergency_contacts: get().trustedContacts,
+        })
+        .select('id')
+        .single();
+
+      if (!error && data) {
+        const checkIn: SafetyCheckIn = {
+          id: data.id,
+          userId: user.id,
+          matchId,
+          location,
+          status: 'active',
+          emergencyContacts: get().trustedContacts,
+          checkInInterval: 30,
+          lastCheckIn: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        set({ activeCheckIn: checkIn });
+      }
+    } catch (e) {
+      console.error('Start check-in error:', e);
+    }
   },
 
   endCheckIn: async () => {
-    set((state) => ({
-      activeCheckIn: state.activeCheckIn
-        ? { ...state.activeCheckIn, status: 'completed' }
-        : null,
-    }));
+    const { activeCheckIn } = get();
+    if (!activeCheckIn) return;
+    try {
+      await supabase
+        .from('safety_check_ins')
+        .update({ status: 'completed' })
+        .eq('id', activeCheckIn.id);
+      set({ activeCheckIn: null });
+    } catch (e) {
+      console.error('End check-in error:', e);
+    }
   },
 
   triggerEmergency: async () => {
     const { activeCheckIn, trustedContacts } = get();
     if (!activeCheckIn) return;
 
+    try {
+      await supabase
+        .from('safety_check_ins')
+        .update({ status: 'emergency' })
+        .eq('id', activeCheckIn.id);
+
+      await supabase.from('moderation_queue').insert({
+        message_content: '[EMERGENCY ALERT] User triggered safety alert',
+        sender_id: activeCheckIn.userId,
+        reason: 'safety_emergency',
+      });
+    } catch (e) {
+      console.error('Emergency trigger error:', e);
+    }
+
     set({
       activeCheckIn: { ...activeCheckIn, status: 'emergency' },
-    });
-
-    console.log('Emergency triggered!', {
-      location: activeCheckIn.location,
-      contacts: trustedContacts,
     });
   },
 
@@ -534,26 +651,67 @@ export const useSafetyStore = create<SafetyState>((set, get) => ({
     const { user } = useAuthStore.getState();
     if (!user) return;
 
-    const report: Report = {
-      id: Date.now().toString(),
-      reporterId: user.id,
-      reportedUserId,
-      reason,
-      description,
-      evidence: [],
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-    };
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .insert({
+          reporter_id: user.id,
+          reported_user_id: reportedUserId,
+          reason,
+          description,
+        });
 
-    set((state) => ({
-      reports: [...state.reports, report],
-    }));
+      if (!error) {
+        const report: Report = {
+          id: '',
+          reporterId: user.id,
+          reportedUserId,
+          reason,
+          description,
+          evidence: [],
+          status: 'pending',
+          createdAt: new Date().toISOString(),
+        };
+        set((state) => ({
+          reports: [...state.reports, report],
+        }));
+      }
+    } catch (e) {
+      console.error('Report user error:', e);
+    }
   },
 
-  addTrustedContact: (phone: string) => {
-    set((state) => ({
-      trustedContacts: [...state.trustedContacts, phone],
-    }));
+  addTrustedContact: async (phone: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('trusted_contacts')
+        .insert({ user_id: user.id, phone });
+
+      if (!error) {
+        set((state) => ({
+          trustedContacts: [...state.trustedContacts, phone],
+        }));
+      }
+    } catch (e) {
+      console.error('Add trusted contact error:', e);
+    }
+  },
+
+  fetchTrustedContacts: async () => {
+    const { user } = useAuthStore.getState();
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('trusted_contacts')
+        .select('phone')
+        .eq('user_id', user.id);
+      if (data) {
+        set({ trustedContacts: data.map((c: any) => c.phone) });
+      }
+    } catch {}
   },
 }));
 
@@ -668,6 +826,112 @@ export const useCommunityStore = create<CommunityState>((set) => ({
     } catch (error) {
       console.error('Create community error:', error);
     }
+  },
+}));
+
+interface NotificationState {
+  pushToken: string | null;
+  pushEnabled: boolean;
+  smsEnabled: boolean;
+  matchAlerts: boolean;
+  messageAlerts: boolean;
+  eventAlerts: boolean;
+  setPushToken: (token: string | null) => void;
+  setPushEnabled: (enabled: boolean) => void;
+  setSmsEnabled: (enabled: boolean) => void;
+  setMatchAlerts: (enabled: boolean) => void;
+  setMessageAlerts: (enabled: boolean) => void;
+  setEventAlerts: (enabled: boolean) => void;
+  requestPermission: () => Promise<boolean>;
+}
+
+export const useNotificationStore = create<NotificationState>((set, get) => ({
+  pushToken: null,
+  pushEnabled: true,
+  smsEnabled: true,
+  matchAlerts: true,
+  messageAlerts: true,
+  eventAlerts: true,
+  setPushToken: (token) => set({ pushToken: token }),
+  setPushEnabled: (enabled) => set({ pushEnabled: enabled }),
+  setSmsEnabled: (enabled) => set({ smsEnabled: enabled }),
+  setMatchAlerts: (enabled) => set({ matchAlerts: enabled }),
+  setMessageAlerts: (enabled) => set({ messageAlerts: enabled }),
+  setEventAlerts: (enabled) => set({ eventAlerts: enabled }),
+  requestPermission: async () => {
+    if (typeof Notification === 'undefined') return false;
+    if (Notification.permission === 'granted') return true;
+    if (Notification.permission === 'denied') return false;
+    const result = await Notification.requestPermission();
+    return result === 'granted';
+  },
+}));
+
+interface StreakState {
+  currentStreak: number;
+  longestStreak: number;
+  lastActiveDate: string | null;
+  checkIn: () => void;
+  initStreak: () => void;
+}
+
+export const useStreakStore = create<StreakState>((set, get) => ({
+  currentStreak: 0,
+  longestStreak: 0,
+  lastActiveDate: null,
+
+  initStreak: () => {
+    try {
+      const stored = localStorage.getItem('isizuo_streak');
+      if (stored) {
+        const data = JSON.parse(stored);
+        const lastDate = data.lastActiveDate ? new Date(data.lastActiveDate) : null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (lastDate) {
+          const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+          if (diffDays === 0) {
+            set({ currentStreak: data.currentStreak || 0, longestStreak: data.longestStreak || 0, lastActiveDate: data.lastActiveDate });
+            return;
+          }
+          if (diffDays === 1) {
+            const newStreak = (data.currentStreak || 0) + 1;
+            const newLongest = Math.max(newStreak, data.longestStreak || 0);
+            set({ currentStreak: newStreak, longestStreak: newLongest, lastActiveDate: today.toISOString() });
+            localStorage.setItem('isizuo_streak', JSON.stringify({ currentStreak: newStreak, longestStreak: newLongest, lastActiveDate: today.toISOString() }));
+            return;
+          }
+        }
+        set({ currentStreak: 0, lastActiveDate: null });
+        localStorage.removeItem('isizuo_streak');
+      }
+    } catch {}
+  },
+
+  checkIn: () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayStr = today.toISOString();
+    const { lastActiveDate, currentStreak, longestStreak } = get();
+
+    if (lastActiveDate === todayStr) return;
+
+    const lastDate = lastActiveDate ? new Date(lastActiveDate) : null;
+    let newStreak = 1;
+
+    if (lastDate) {
+      const diffDays = Math.floor((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        newStreak = currentStreak + 1;
+      }
+    }
+
+    const newLongest = Math.max(newStreak, longestStreak);
+    set({ currentStreak: newStreak, longestStreak: newLongest, lastActiveDate: todayStr });
+    try {
+      localStorage.setItem('isizuo_streak', JSON.stringify({ currentStreak: newStreak, longestStreak: newLongest, lastActiveDate: todayStr }));
+    } catch {}
   },
 }));
 

@@ -200,5 +200,16 @@
   "boost": "Ƙara",
   "pass_action": "Tsallake",
   "by_continuing": "Ta yadda za a ci gaba, yarda da",
-  "and": "da"
+  "and": "da",
+  "resend_code": "Sake aika lambar",
+  "sending": "Ana aika...",
+  "streak": "Jeri",
+  "day_streak": "jeri na kwana",
+  "longest_streak": "Jeri mafi tsawo",
+  "notifications_settings": "Saitunan Sanarwa",
+  "push_enabled": "Sanarwar Turawa",
+  "sms_enabled": "Sanarwar SMS",
+  "match_alerts": "Faɗakarwar Matching",
+  "message_alerts": "Faɗakarwar Saƙo",
+  "event_alerts": "Tunatarwar Taron"
 }

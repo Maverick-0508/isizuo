@@ -200,5 +200,16 @@
   "boost": "Ìgbòsílá",
   "pass_action": "Kọ̀sí",
   "by_continuing": "Nígbà tí o bá tẹ̀síwájú, gbani ìṣọ̀kan pẹ̀lú",
-  "and": "ati"
+  "and": "ati",
+  "resend_code": "Tun koodu firanṣẹ",
+  "sending": "Firanṣẹ...",
+  "streak": "Streak",
+  "day_streak": "ọjọ streak",
+  "longest_streak": "Streak gigun julọ",
+  "notifications_settings": "Awọn eto ifitonileti",
+  "push_enabled": "Awọn ifitonileti Titari",
+  "sms_enabled": "Awọn ifitonileti SMS",
+  "match_alerts": "Awọn itaniji Ibamu",
+  "message_alerts": "Awọn itaniji Ifiranṣẹ",
+  "event_alerts": "Awọn Olurannileti Iṣẹlẹ"
 }

@@ -35,6 +35,13 @@ export default function EditProfileScreen() {
   const [lookingFor, setLookingFor] = useState(user?.lookingFor || 'relationship');
   const [languages, setLanguages] = useState<Language[]>(user?.languages || ['en']);
 
+  // Prompts State
+  const [prompts, setPrompts] = useState<{question: string; answer: string}[]>(user?.prompts || []);
+  const [showPromptModal, setShowPromptModal] = useState(false);
+  const [editingPromptIndex, setEditingPromptIndex] = useState<number | null>(null);
+  const [promptQuestion, setPromptQuestion] = useState('');
+  const [promptAnswer, setPromptAnswer] = useState('');
+
   // KYC Verification State
   const [kycStep, setKycStep] = useState<'idle' | 'selfie' | 'id_upload' | 'submitting' | 'success' | 'rejected'>('idle');
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
@@ -165,6 +172,7 @@ export default function EditProfileScreen() {
         religion,
         values: selectedValues,
         interests: selectedInterests,
+        prompts,
         familyValues: familyValues as any,
         lookingFor: lookingFor as any,
         languages,
@@ -174,6 +182,33 @@ export default function EditProfileScreen() {
     } catch (error) {
       Alert.alert('Error', 'Failed to update profile');
     }
+  };
+
+  const openPromptModal = (index: number | null) => {
+    if (index !== null) {
+      setEditingPromptIndex(index);
+      setPromptQuestion(prompts[index].question);
+      setPromptAnswer(prompts[index].answer);
+    } else {
+      setEditingPromptIndex(null);
+      setPromptQuestion('');
+      setPromptAnswer('');
+    }
+    setShowPromptModal(true);
+  };
+
+  const savePrompt = () => {
+    if (!promptQuestion.trim() || !promptAnswer.trim()) return;
+    if (editingPromptIndex !== null) {
+      setPrompts((prev) => prev.map((p, i) => i === editingPromptIndex ? { question: promptQuestion, answer: promptAnswer } : p));
+    } else {
+      setPrompts((prev) => [...prev, { question: promptQuestion, answer: promptAnswer }]);
+    }
+    setShowPromptModal(false);
+  };
+
+  const removePrompt = (index: number) => {
+    setPrompts((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -262,6 +297,70 @@ export default function EditProfileScreen() {
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* PROMPTS SECTION */}
+        <Text style={styles.label}>{t('prompts')}</Text>
+        <Text style={styles.promptHelp}>{t('prompts_help')}</Text>
+        {prompts.map((p, i) => (
+          <View key={i} style={styles.promptCard}>
+            <Text style={styles.promptQuestion}>{p.question}</Text>
+            <Text style={styles.promptAnswer}>{p.answer}</Text>
+            <View style={styles.promptActions}>
+              <TouchableOpacity onPress={() => openPromptModal(i)}>
+                <Text style={styles.promptActionText}>{t('edit')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => removePrompt(i)}>
+                <Text style={[styles.promptActionText, { color: COLORS.danger }]}>{t('cancel')}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))}
+        {prompts.length < 3 && (
+          <TouchableOpacity style={styles.addPromptBtn} onPress={() => openPromptModal(null)}>
+            <Ionicons name="add-circle-outline" size={22} color={COLORS.primary} />
+            <Text style={styles.addPromptText}>{t('add_prompt')}</Text>
+          </TouchableOpacity>
+        )}
+
+        {/* Prompt Edit Modal */}
+        <Modal visible={showPromptModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.promptModal}>
+              <TouchableOpacity style={styles.promptModalClose} onPress={() => setShowPromptModal(false)}>
+                <Ionicons name="close" size={24} color={COLORS.text} />
+              </TouchableOpacity>
+              <Text style={styles.promptModalTitle}>{editingPromptIndex !== null ? t('edit_prompt') : t('add_prompt')}</Text>
+
+              <Text style={styles.promptModalLabel}>{t('prompt_question')}</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.promptQuestionScroll}>
+                <View style={styles.promptQuestionRow}>
+                  {['My simple pleasures', "I'm weirdly good at", 'A life goal of mine', 'The way to my heart is', 'I feel most at home when', "Biggest risk I've ever taken", 'My favorite African dish', 'Best travel story', "I'm looking for someone who", 'My love language is'].map((q) => (
+                    <TouchableOpacity
+                      key={q}
+                      style={[styles.promptQuestionChip, promptQuestion === q && styles.promptQuestionChipActive]}
+                      onPress={() => setPromptQuestion(q)}
+                    >
+                      <Text style={[styles.promptQuestionChipText, promptQuestion === q && styles.promptQuestionChipTextActive]}>{q}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </ScrollView>
+
+              <Text style={styles.promptModalLabel}>{t('prompt_answer')}</Text>
+              <TextInput
+                style={[styles.textInput, styles.textArea]}
+                value={promptAnswer}
+                onChangeText={setPromptAnswer}
+                placeholder="Write your answer..."
+                placeholderTextColor={COLORS.textLight}
+                multiline
+                numberOfLines={3}
+              />
+
+              <Button title={t('save')} variant="gradient" size="md" fullWidth onPress={savePrompt} disabled={!promptQuestion.trim() || !promptAnswer.trim()} />
+            </View>
+          </View>
+        </Modal>
 
         {/* KYC VERIFICATION SECTION */}
         <View style={styles.kycSection}>
@@ -717,4 +816,37 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: COLORS.borderLight,
   },
+  promptHelp: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.textLight, marginBottom: SPACING.md, lineHeight: 20 },
+  promptCard: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.md, padding: SPACING.md,
+    marginBottom: SPACING.sm, borderWidth: 1, borderColor: COLORS.borderLight,
+  },
+  promptQuestion: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.primary, marginBottom: 4 },
+  promptAnswer: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.text, lineHeight: 22, marginBottom: 8 },
+  promptActions: { flexDirection: 'row', gap: SPACING.md },
+  promptActionText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.primary },
+  addPromptBtn: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 14, paddingHorizontal: SPACING.md, backgroundColor: COLORS.surface,
+    borderRadius: BORDER_RADIUS.md, borderWidth: 1.5, borderStyle: 'dashed', borderColor: COLORS.border,
+    marginBottom: SPACING.lg,
+  },
+  addPromptText: { fontSize: FONT_SIZES.md, fontFamily: FONTS.semiBold, color: COLORS.primary },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end', padding: SPACING.lg },
+  promptModal: {
+    backgroundColor: COLORS.surface, borderRadius: BORDER_RADIUS.xl, padding: SPACING.xl,
+    ...SHADOWS.lg,
+  },
+  promptModalClose: { alignSelf: 'flex-end' },
+  promptModalTitle: { fontSize: FONT_SIZES.xl, fontFamily: FONTS.bold, color: COLORS.text, marginBottom: SPACING.lg, letterSpacing: -0.5 },
+  promptModalLabel: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.text, marginBottom: 8, marginTop: SPACING.md },
+  promptQuestionScroll: { maxHeight: 100, marginBottom: SPACING.md },
+  promptQuestionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
+  promptQuestionChip: {
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: BORDER_RADIUS.full,
+    backgroundColor: COLORS.surface, borderWidth: 1, borderColor: COLORS.borderLight,
+  },
+  promptQuestionChipActive: { backgroundColor: COLORS.primaryGlow, borderColor: COLORS.primary },
+  promptQuestionChipText: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.medium, color: COLORS.textMuted },
+  promptQuestionChipTextActive: { color: COLORS.primary, fontFamily: FONTS.semiBold },
 });

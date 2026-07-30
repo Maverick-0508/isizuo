@@ -402,7 +402,19 @@ export default function ExploreScreen() {
               </View>
 
               {activeProfileTab === 'about' && (
-                <Text style={styles.cardBio}>{currentProfile.bio}</Text>
+                <>
+                  <Text style={styles.cardBio}>{currentProfile.bio}</Text>
+                  {currentProfile.prompts && currentProfile.prompts.length > 0 && (
+                    <View style={styles.promptsSection}>
+                      {currentProfile.prompts.map((p: any, i: number) => (
+                        <View key={i} style={styles.promptItem}>
+                          <Text style={styles.promptItemQuestion}>{p.question}</Text>
+                          <Text style={styles.promptItemAnswer}>{p.answer}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </>
               )}
 
               {activeProfileTab === 'interests' && (
@@ -832,6 +844,13 @@ const styles = StyleSheet.create({
   cardTabText: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.semiBold, color: COLORS.textMuted, textTransform: 'capitalize' },
   cardTabTextActive: { color: COLORS.primary },
   cardBio: { fontSize: FONT_SIZES.md, fontFamily: FONTS.regular, color: COLORS.textSecondary, lineHeight: 24 },
+  promptsSection: { marginTop: SPACING.md, gap: SPACING.sm },
+  promptItem: {
+    backgroundColor: COLORS.primaryGlow, borderRadius: BORDER_RADIUS.md, padding: SPACING.sm,
+    borderLeftWidth: 3, borderLeftColor: COLORS.primary,
+  },
+  promptItemQuestion: { fontSize: FONT_SIZES.xs, fontFamily: FONTS.semiBold, color: COLORS.primary, marginBottom: 2 },
+  promptItemAnswer: { fontSize: FONT_SIZES.sm, fontFamily: FONTS.regular, color: COLORS.text, lineHeight: 20 },
   pillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: SPACING.sm },
   cardActions: {
     flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: SPACING.md,
