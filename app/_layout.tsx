@@ -64,6 +64,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
 
     const inAuthGroup = segments[0] === '(auth)';
     const inTabsGroup = segments[0] === '(tabs)';
+    const hasCompletedOnboarding = !!(user && user.name && user.name.length > 0);
 
     if (!isAuthenticated && !inAuthGroup) {
       if (!hasNavigated.current || inTabsGroup) {
@@ -72,12 +73,16 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     } else if (isAuthenticated && inAuthGroup) {
       const inOnboarding = segments[1] === 'onboarding';
-      const hasCompletedOnboarding = user && user.name && user.name.length > 0;
-
       if (hasCompletedOnboarding && !inOnboarding && (!hasNavigated.current || inAuthGroup)) {
         hasNavigated.current = true;
         router.replace('/(tabs)');
+      } else if (!hasCompletedOnboarding && !inOnboarding && !hasNavigated.current) {
+        hasNavigated.current = true;
+        router.replace('/(auth)/onboarding');
       }
+    } else if (isAuthenticated && inTabsGroup && user && !hasCompletedOnboarding) {
+      hasNavigated.current = true;
+      router.replace('/(auth)/onboarding');
     }
   }, [isAuthenticated, isLoading, segments, router, user]);
 

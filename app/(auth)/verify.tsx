@@ -28,7 +28,12 @@ export default function VerifyScreen() {
     setIsLoading(true);
     try {
       await verifySignIn(email, code);
-      router.replace('/(tabs)');
+      const profile = useAuthStore.getState().user;
+      if (profile?.name) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/onboarding');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : t('invalid_otp'));
       setCode('');
