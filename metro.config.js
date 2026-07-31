@@ -14,13 +14,17 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
     }
 
     const extensions = ['.ts', '.tsx', '.js', '.jsx'];
-    for (const ext of extensions) {
+    const candidates = platform
+      ? extensions.map((e) => `.${platform}${e}`).concat(extensions)
+      : extensions;
+
+    for (const ext of candidates) {
       if (fs.existsSync(absPath + ext)) {
         return { filePath: absPath + ext, type: 'sourceFile' };
       }
     }
 
-    for (const ext of extensions) {
+    for (const ext of candidates) {
       const indexPath = path.join(absPath, 'index' + ext);
       if (fs.existsSync(indexPath)) {
         return { filePath: indexPath, type: 'sourceFile' };
