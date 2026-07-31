@@ -82,6 +82,8 @@ export default function EventsScreen() {
     }));
   }, [events, userEvents]);
 
+  const yourEvents = useMemo(() => enrichedEvents.filter((e: any) => e.rsvp), [enrichedEvents]);
+
   const filteredEvents = useMemo(() => {
     let result = enrichedEvents;
     if (activeCategory !== 'all') {
@@ -218,7 +220,7 @@ export default function EventsScreen() {
             <View style={styles.eventInfo}>
               <View style={styles.eventDateRow}>
                 <Ionicons name="time-outline" size={13} color={COLORS.primary} />
-                <Text style={styles.eventDate}>{event.date} \u2022 {event.time}</Text>
+                <Text style={styles.eventDate}>{event.date} • {event.time}</Text>
               </View>
               <Text style={styles.eventTitle}>{event.title}</Text>
               <Text style={styles.eventDesc} numberOfLines={2}>{event.description}</Text>
@@ -252,17 +254,67 @@ export default function EventsScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle} accessibilityRole="header">{t('your_events')}</Text>
-          <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')}>
-            <Text style={styles.seeAll}>{t('see_all')}</Text>
-          </TouchableOpacity>
+          {yourEvents.length > 0 && (
+            <TouchableOpacity accessibilityRole="button" accessibilityLabel={t('see_all')} onPress={() => { setActiveCategory('all'); setSearchQuery(''); }}>
+              <Text style={styles.seeAll}>{t('see_all')}</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <View style={styles.emptyEvents}>
-          <View style={styles.emptyIconWrap}>
-            <Ionicons name="calendar-outline" size={36} color={COLORS.primaryLight} />
+        {yourEvents.length === 0 ? (
+          <View style={styles.emptyEvents}>
+            <View style={styles.emptyIconWrap}>
+              <Ionicons name="calendar-outline" size={36} color={COLORS.primaryLight} />
+            </View>
+            <Text style={styles.emptyTitle}>{t('no_upcoming_events')}</Text>
+            <Text style={styles.emptyDesc}>{t('rsvp_to_events')}</Text>
           </View>
-          <Text style={styles.emptyTitle}>{t('no_upcoming_events')}</Text>
-          <Text style={styles.emptyDesc}>{t('rsvp_to_events')}</Text>
-        </View>
+        ) : (
+          yourEvents.map((event) => (
+            <TouchableOpacity key={event.id} style={styles.eventCard} activeOpacity={0.92} accessibilityRole="button" accessibilityLabel={`${event.title}, ${event.date}, ${event.time}, ${event.location}, ${event.currentAttendees} ${t('going')}`}>
+              <View style={[styles.eventCover, { backgroundColor: event.color + '12' }]}>
+                <View style={[styles.eventIconCircle, { backgroundColor: event.color + '20' }]}>
+                  <Ionicons name={EVENT_CATEGORIES.find(c => c.key === event.category)?.icon as any || 'calendar'} size={26} color={event.color} />
+                </View>
+                <View style={styles.goingBadge}>
+                  <Ionicons name="checkmark-circle" size={14} color="#FFFFFF" />
+                  <Text style={styles.goingBadgeText}>Going</Text>
+                </View>
+              </View>
+              <View style={styles.eventInfo}>
+                <View style={styles.eventDateRow}>
+                  <Ionicons name="time-outline" size={13} color={COLORS.primary} />
+                  <Text style={styles.eventDate}>{event.date} • {event.time}</Text>
+                </View>
+                <Text style={styles.eventTitle}>{event.title}</Text>
+                <Text style={styles.eventDesc} numberOfLines={2}>{event.description}</Text>
+                <View style={styles.eventMeta}>
+                  <View style={styles.eventMetaItem}>
+                    <Ionicons name="location-outline" size={13} color={COLORS.textLight} />
+                    <Text style={styles.eventMetaText} numberOfLines={1}>{event.location}</Text>
+                  </View>
+                  <View style={styles.eventMetaItem}>
+                    <Ionicons name="people-outline" size={13} color={COLORS.textLight} />
+                    <Text style={styles.eventMetaText}>{event.currentAttendees ?? event.attendees ?? 0} {t('going')}</Text>
+                  </View>
+                </View>
+                <View style={styles.eventActions}>
+                  {event.isFree ? (
+                    <Badge label={t('free')} variant="success" icon="checkmark-circle" />
+                  ) : (
+                    <Badge label={t('paid')} variant="info" icon="card" />
+                  )}
+                  <Button
+                    title={event.rsvp ? t('cancel') : t('rsvp')}
+                    variant={event.rsvp ? 'outline' : 'primary'}
+                    size="sm"
+                    icon={event.rsvp ? 'close' : 'checkmark'}
+                    onPress={() => handleRSVP(event)}
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
       {/* LUMA-STYLE RSVP MODAL */}
@@ -288,7 +340,7 @@ export default function EventsScreen() {
                     <Text style={styles.rsvpCoverTitle}>{rsvpTargetEvent.title}</Text>
                     <View style={styles.rsvpCoverMeta}>
                       <Ionicons name="calendar-outline" size={13} color="rgba(255,255,255,0.85)" />
-                      <Text style={styles.rsvpCoverMetaText}>{rsvpTargetEvent.date} \u2022 {rsvpTargetEvent.time}</Text>
+                      <Text style={styles.rsvpCoverMetaText}>{rsvpTargetEvent.date} • {rsvpTargetEvent.time}</Text>
                     </View>
                     <View style={styles.rsvpCoverMeta}>
                       <Ionicons name="location-outline" size={13} color="rgba(255,255,255,0.85)" />

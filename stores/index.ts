@@ -910,6 +910,7 @@ interface CommunityState {
   isLoading: boolean;
   fetchCommunities: () => Promise<void>;
   joinCommunity: (communityId: string) => void;
+  leaveCommunity: (communityId: string) => void;
   createCommunity: (community: Omit<Community, 'id' | 'memberCount' | 'createdAt'>) => Promise<void>;
 }
 
@@ -934,7 +935,15 @@ export const useCommunityStore = create<CommunityState>((set) => ({
 
   joinCommunity: (communityId: string) => {
     set((state) => ({
-      userCommunities: [...state.userCommunities, communityId],
+      userCommunities: state.userCommunities.includes(communityId)
+        ? state.userCommunities
+        : [...state.userCommunities, communityId],
+    }));
+  },
+
+  leaveCommunity: (communityId: string) => {
+    set((state) => ({
+      userCommunities: state.userCommunities.filter((id) => id !== communityId),
     }));
   },
 
@@ -1068,9 +1077,22 @@ interface AppState {
   toggleLowDataMode: () => void;
 }
 
+function readStoredLanguage(): Language {
+  try {
+    const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('isizuo_language') : null;
+    if (stored && ['en', 'yo', 'sw', 'ha', 'am'].includes(stored)) return stored as Language;
+  } catch {}
+  return 'en';
+}
+
 export const useAppStore = create<AppState>((set) => ({
-  language: 'en',
+  language: readStoredLanguage(),
   isLowDataMode: false,
-  setLanguage: (lang) => set({ language: lang }),
+  setLanguage: (lang) => {
+    set({ language: lang });
+    try {
+      localStorage.setItem('isizuo_language', lang);
+    } catch {}
+  },
   toggleLowDataMode: () => set((state) => ({ isLowDataMode: !state.isLowDataMode })),
 }));

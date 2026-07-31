@@ -21,7 +21,7 @@ const SAMPLE_COMMUNITIES = [
 
 export default function CommunityScreen() {
   const { t } = useTranslation();
-  const { communities: storeCommunities, isLoading, fetchCommunities, joinCommunity, userCommunities, createCommunity } = useCommunityStore();
+  const { communities: storeCommunities, isLoading, fetchCommunities, joinCommunity, leaveCommunity, userCommunities, createCommunity } = useCommunityStore();
   const [activeTab, setActiveTab] = useState<'discover' | 'joined'>('discover');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -80,8 +80,12 @@ export default function CommunityScreen() {
     return result;
   }, [communities, activeTab, searchQuery]);
 
-  const handleJoinToggle = (communityId: string) => {
-    joinCommunity(communityId);
+  const handleJoinToggle = (community: any) => {
+    if (community.isJoined) {
+      leaveCommunity(community.id);
+    } else {
+      joinCommunity(community.id);
+    }
   };
 
   return (
@@ -172,9 +176,9 @@ export default function CommunityScreen() {
             </View>
             <View style={styles.communityAction}>
               {community.isJoined ? (
-                <Button title={t('joined_status')} variant="outline" size="sm" icon="checkmark" onPress={() => handleJoinToggle(community.id)} />
+                <Button title={t('joined_status')} variant="outline" size="sm" icon="checkmark" onPress={() => handleJoinToggle(community)} />
               ) : (
-                <Button title={t('join')} variant="primary" size="sm" icon="add" onPress={() => handleJoinToggle(community.id)} />
+                <Button title={t('join')} variant="primary" size="sm" icon="add" onPress={() => handleJoinToggle(community)} />
               )}
             </View>
           </TouchableOpacity>

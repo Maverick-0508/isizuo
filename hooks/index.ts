@@ -12,7 +12,7 @@ export function useTranslation() {
   }, [language]);
 
   const t = useCallback((key: string, options?: any) => {
-    return i18n.t(key, options);
+    return i18n.t(key, { ...options, locale: language });
   }, [language]);
 
   return { t, locale: language };
